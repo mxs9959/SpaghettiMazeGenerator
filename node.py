@@ -1,37 +1,29 @@
 class Node:
-    def __init__(self, x, y):
-        # Store the node's coordinates
-        self.x = x
-        self.y = y
+    def __init__(self, x, y, is_start=False, is_end=False):
+        self.x, self.y = x, y
+        self.is_start = is_start
+        self.is_end = is_end
 
 class Edge:
     def __init__(self, node1, node2):
-        if not isinstance(node1, Node) or not isinstance(node2, Node):
+        if not (isinstance(node1, Node) and isinstance(node2, Node)):
             raise TypeError("Both arguments must be instances of Node.")
-        self.node1 = node1
-        self.node2 = node2
-
-    def connects(self):
-        return {self.node1, self.node2}  # Return a set for easy comparison
+        self.node1, self.node2 = node1, node2
 
     def is_sub_edge(self, other):
-        # Check if all nodes share either x or y coordinate
+        # Check if nodes share x or y coordinate
         if not (
-                self.node1.x == other.node1.x == self.node2.x == other.node2.x
-                or self.node1.y == other.node1.y == self.node2.y == other.node2.y
+                (self.node1.x == other.node1.x == self.node2.x == other.node2.x) or
+                (self.node1.y == other.node1.y == self.node2.y == other.node2.y)
         ):
             return False
 
         # Determine the shared coordinate (x or y)
         if self.node1.x == other.node1.x:  # x is shared
-            # Check if the ranges of y-coordinates overlap
             self_range = sorted([self.node1.y, self.node2.y])
             other_range = sorted([other.node1.y, other.node2.y])
-            return not (self_range[1] <= other_range[0] or self_range[0] >= other_range[1])
-        elif self.node1.y == other.node1.y:  # y is shared
-            # Check if the ranges of x-coordinates overlap
+        else:  # y is shared
             self_range = sorted([self.node1.x, self.node2.x])
             other_range = sorted([other.node1.x, other.node2.x])
-            return not (self_range[1] <= other_range[0] or self_range[0] >= other_range[1])
 
-        return False
+        return not (self_range[1] <= other_range[0] or self_range[0] >= other_range[1])
