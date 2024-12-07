@@ -1,12 +1,4 @@
-# File: node.py
 class Node:
-    """
-    Represents a single node in the maze grid.
-
-    Attributes:
-        x (int): X-coordinate of the node in the grid
-        y (int): Y-coordinate of the node in the grid
-    """
     def __init__(self, x, y):
         # Store the node's coordinates
         self.x = x

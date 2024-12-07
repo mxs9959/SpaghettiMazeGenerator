@@ -42,24 +42,6 @@ class MazeAlgorithm:
         self.visited = set()
         path = []
 
-        """
-        def draw_start_end():
-            #Draw start (green) and end (red) points on the canvas.
-            self.canvas.create_oval(
-                start_node.x * self.cell_width, start_node.y * self.cell_height,
-                start_node.x * self.cell_width + self.cell_width,
-                start_node.y * self.cell_height + self.cell_height,
-                fill='green', tags='start'
-            )
-            self.canvas.create_oval(
-                end_node.x * self.cell_width, end_node.y * self.cell_height,
-                end_node.x * self.cell_width + self.cell_width,
-                end_node.y * self.cell_height + self.cell_height,
-                fill='red', tags='end'
-            )
-        
-        """
-
         def dfs(current_node):
             # Slight delay for visualization
             time.sleep(speed_var.get())
@@ -95,18 +77,12 @@ class MazeAlgorithm:
         w = 0.45*min(self.cell_height, self.cell_width)
 
         if x1 == x2:  # Vertical case
-            black_x1 = x1 - w // 2
-            black_x2 = x1 + w // 2
             white_x1 = x1 - w // 8
             white_x2 = x1 + w // 8
-            #self.canvas.create_rectangle(black_x1, y1, black_x2, y2, fill="black", outline="black")
             self.canvas.create_rectangle(white_x1, y1, white_x2, y2, fill="white", outline="white")
         elif y1 == y2:  # Horizontal case
-            black_y1 = y1 - w // 2
-            black_y2 = y1 + w // 2
             white_y1 = y1 - w // 8
             white_y2 = y1 + w // 8
-            #self.canvas.create_rectangle(x1, black_y1, x2, black_y2, fill="black", outline="black")
             self.canvas.create_rectangle(x1, white_y1, x2, white_y2, fill="white", outline="white")
 
     def add_edge(self, node1, node2):
@@ -182,14 +158,20 @@ class MazeAlgorithm:
             x2 - width // 2, y2 - width // 2, x2 + width // 2, y2 + width // 2,
             fill="black", outline=""
         )
+        if dx>0 or dy>0:
+            bb = black_border
+            nbb = 0
+        else:
+            bb = 0
+            nbb = -black_border
         if dx == 0:
             canvas.create_rectangle(
-                x2 - width // 2 + black_border, y2 - width//2, x2 + width // 2-black_border, y2 + width // 2,
+                x2 - width // 2 + black_border, y2 - width//2 -nbb, x2 + width // 2-black_border, y2 + width // 2 - bb,
                 fill="white", outline=""
             )
         else:
             canvas.create_rectangle(
-                x2 - width // 2, y2 - width // 2+black_border, x2 + width // 2, y2 + width // 2-black_border,
+                x2 - width // 2 - nbb, y2 - width // 2+black_border, x2 + width // 2 - bb, y2 + width // 2-black_border,
                 fill="white", outline=""
             )
         canvas.update()
