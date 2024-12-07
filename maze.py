@@ -92,7 +92,19 @@ class MazeAlgorithm:
             path.pop()
 
         dfs(start_node)
-        print("Maze generation terminated.")
+        x = end_node.x * self.cell_width + self.cell_width/2 + self.offset_x
+        y = end_node.y * self.cell_width + self.cell_width/2 + self.offset_y
+        width = self.cell_width//2
+        black_border = 3
+        self.canvas.create_rectangle(
+            x - width // 2 + black_border,
+            y - width // 2 + black_border,
+            x + width // 2 - black_border,
+            y + width // 2 - black_border,
+            fill="red",
+            outline=""
+        )
+        print("Maze generation completed.")
         return start_node, end_node
 
     def add_edge(self, node1, node2):
@@ -103,12 +115,12 @@ class MazeAlgorithm:
             return True
         return False
 
-    def animate_rectangle(self, canvas, node1, node2, width, delay):
+    def animate_rectangle(self, canvas, node1, node2, width, delay, end=False):
         black_border, mag_d = 3, delay
-        x1 = node1.x * self.cell_width + self.cell_width/2
-        y1 = node1.y * self.cell_width + self.cell_width/2
-        x2 = node2.x * self.cell_width + self.cell_width/2
-        y2 = node2.y * self.cell_width + self.cell_width/2
+        x1 = node1.x * self.cell_width + self.cell_width/2 + self.offset_x
+        y1 = node1.y * self.cell_width + self.cell_width/2 + self.offset_y
+        x2 = node2.x * self.cell_width + self.cell_width/2 + self.offset_x
+        y2 = node2.y * self.cell_width + self.cell_width/2 + self.offset_y
 
         def draw_colored_rectangle(x, y, is_start=False):
             canvas.create_rectangle(
@@ -116,13 +128,11 @@ class MazeAlgorithm:
                 y - width // 2 + black_border,
                 x + width // 2 - black_border,
                 y + width // 2 - black_border,
-                fill="white" if is_start else "blue",
+                fill="green" if node1.is_start and is_start else "white" if is_start else "blue",
                 outline=""
             )
 
-        draw_colored_rectangle(x1, y1, is_start=True)
         draw_colored_rectangle(x2, y2)
-        canvas.update()
 
         dx = mag_d if x2 > x1 else -mag_d if x2 < x1 else 0
         dy = mag_d if y2 > y1 else -mag_d if y2 < y1 else 0
@@ -171,6 +181,7 @@ class MazeAlgorithm:
 
         bb = black_border if dx > 0 or dy > 0 else 0
         nbb = 0 if bb else -black_border
+        draw_colored_rectangle(x1, y1, is_start=True)
 
         if dx == 0:
             canvas.create_rectangle(
