@@ -1,5 +1,7 @@
 import tkinter as tk
 import tkinter.messagebox
+from math import floor
+
 from maze import MazeAlgorithm
 from node import Node
 from load import export_maze_to_csv, export_maze_to_pdf
@@ -7,7 +9,7 @@ from load import export_maze_to_csv, export_maze_to_pdf
 class MazeGeneratorUI:
     def __init__(self, master):
         self.master = master
-        master.title("Spaghetti Maze Generator")
+        master.title("Spaghetti Supper")
 
         self._create_config_frame()
         self._create_canvas_frame()
@@ -30,12 +32,22 @@ class MazeGeneratorUI:
         self.height_entry = self._create_entry(default="10")
 
         # Delay Slider
-        tk.Label(self.config_frame, text="Speed:").pack(side=tk.LEFT, padx=(10, 0))
-        self.speed_var = tk.DoubleVar(value=5)
+        tk.Label(self.config_frame, text="Speed (%):").pack(side=tk.LEFT, padx=(10, 0))
+        self.speed_var = tk.DoubleVar(value=15)
         self.speed_slider = tk.Scale(
-            self.config_frame, from_=1, to=30,
+            self.config_frame, from_=1, to=100,
             resolution=1, orient=tk.HORIZONTAL,
             variable=self.speed_var, length=100
+        )
+        self.speed_slider.pack(side=tk.LEFT, padx=5)
+
+        # Reach limit Slider
+        tk.Label(self.config_frame, text="Reach (%):").pack(side=tk.LEFT, padx=(10, 0))
+        self.reach_var = tk.DoubleVar(value=25)
+        self.speed_slider = tk.Scale(
+            self.config_frame, from_=1, to=100,
+            resolution=1, orient=tk.HORIZONTAL,
+            variable=self.reach_var, length=100
         )
         self.speed_slider.pack(side=tk.LEFT, padx=5)
 
@@ -191,14 +203,14 @@ class MazeGeneratorUI:
 
         # Create maze algorithm with adjusted canvas dimensions
         self.current_maze_algorithm = MazeAlgorithm(
-            self.canvas, width, height, self.master,
+            self, width, height,
             canvas_width=window_width,
             canvas_height=window_height
         )
 
         # Wrapper to reset generation flag after maze is complete
         def maze_generation_complete(grid, speed_var):
-            start_node, end_node = self.current_maze_algorithm.generate_maze(grid, speed_var)
+            start_node, end_node = self.current_maze_algorithm.generate_maze(grid)
 
             # Reset UI state
             self.maze_generating = False

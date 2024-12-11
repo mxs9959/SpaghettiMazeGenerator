@@ -13,7 +13,7 @@ def center_window(root, width, height):
 
 def main():
     root = tk.Tk()
-    root.title("Spaghetti Maze Generator")
+    root.title("Spaghetti Supper")
 
     # Increase window size by 75%
     window_width = int(600 * 1.75)

@@ -1,16 +1,19 @@
 import random
-import time
+
 from node import Edge
 
 class MazeAlgorithm:
-    def __init__(self, canvas, width, height, master, canvas_width=None, canvas_height=None):
-        self.canvas = canvas
+    def __init__(self, ui, width, height, canvas_width=None, canvas_height=None):
+        self.canvas = ui.canvas
         self.width, self.height = width, height
-        self.master = master
+        self.master = ui.master
+
+        self.reach_var = ui.reach_var
+        self.speed_var = ui.speed_var
 
         # Use provided canvas dimensions or default to canvas's current width/height
-        canvas_width = canvas_width or canvas.winfo_width()
-        canvas_height = canvas_height or canvas.winfo_height()
+        canvas_width = canvas_width or ui.canvas.winfo_width()
+        canvas_height = canvas_height or ui.canvas.winfo_height()
 
         # Adjust cell size to fit entire maze in canvas
         self.cell_width = min(canvas_width // width, canvas_height // height)
@@ -23,11 +26,11 @@ class MazeAlgorithm:
         self.edges = []
         self.visited = set()
 
-        # Corrected directions initialization
+        # Directions initialization
         self.directions = [
-                              (dx, 0) for dx in range(-width//4, width//4)
+                              (dx, 0) for dx in range(-round(width*ui.reach_var.get()/100), round(width*ui.reach_var.get()/100))
                           ] + [
-                              (0, dy) for dy in range(-height//4, height//4)
+                              (0, dy) for dy in range(-round(height*ui.reach_var.get()/100), round(height*ui.reach_var.get()/100))
                           ]
 
     def get_unvisited_neighbors(self, node, grid):
@@ -40,12 +43,13 @@ class MazeAlgorithm:
                 self.add_edge(grid[new_y][new_x], node))
         ]
 
-    def generate_maze(self, grid, speed_var):
+    def generate_maze(self, grid):
         # Randomly select start and end nodes on opposite edges
         start_side = random.choice(['top', 'bottom', 'left', 'right'])
         end_side = {'top': 'bottom', 'bottom': 'top', 'left': 'right', 'right': 'left'}[start_side]
 
         # Select start node
+        global start_node
         if start_side == 'top':
             start_node = grid[0][random.randint(0, self.width-1)]
         elif start_side == 'bottom':
@@ -56,6 +60,7 @@ class MazeAlgorithm:
             start_node = grid[random.randint(0, self.height-1)][self.width-1]
 
         # Select end node
+        global end_node
         if end_side == 'top':
             end_node = grid[0][random.randint(0, self.width-1)]
         elif end_side == 'bottom':
@@ -80,30 +85,14 @@ class MazeAlgorithm:
             if len(path) > 1:
                 prev_node = path[-2]
                 self.animate_rectangle(self.canvas, prev_node, current_node,
-                                       self.cell_width//2, speed_var.get())
+                                       self.cell_width//2, self.speed_var.get())
 
             neighbors = self.get_unvisited_neighbors(current_node, grid)
             for neighbor in neighbors:
-                if neighbor not in self.visited and (
-                        len(path) < 5 or random.random() < 1
-                ):
+                if neighbor not in self.visited:
                     dfs(neighbor)
-
             path.pop()
-
         dfs(start_node)
-        x = end_node.x * self.cell_width + self.cell_width/2 + self.offset_x
-        y = end_node.y * self.cell_width + self.cell_width/2 + self.offset_y
-        width = self.cell_width//2
-        black_border = 3
-        self.canvas.create_rectangle(
-            x - width // 2 + black_border,
-            y - width // 2 + black_border,
-            x + width // 2 - black_border,
-            y + width // 2 - black_border,
-            fill="red",
-            outline=""
-        )
         print("Maze generation completed.")
         return start_node, end_node
 
@@ -115,59 +104,59 @@ class MazeAlgorithm:
             return True
         return False
 
-    def animate_rectangle(self, canvas, node1, node2, width, delay, end=False):
-        black_border, mag_d = 3, delay
-        x1 = node1.x * self.cell_width + self.cell_width/2 + self.offset_x
-        y1 = node1.y * self.cell_width + self.cell_width/2 + self.offset_y
-        x2 = node2.x * self.cell_width + self.cell_width/2 + self.offset_x
-        y2 = node2.y * self.cell_width + self.cell_width/2 + self.offset_y
+    def animate_rectangle(self, canvas, node1, node2, width, dist):
 
-        def draw_colored_rectangle(x, y, is_start=False):
+        def grid2Coord(node):
+            return (node.x * self.cell_width + self.cell_width/2 + self.offset_x, node.y * self.cell_width + self.cell_width/2 + self.offset_y)
+
+        black_border = 3
+        MAX_SPEED = 60
+        d = max(round(dist/100*MAX_SPEED), 1)
+        x1, y1 = grid2Coord(node1)
+        x2, y2 = grid2Coord(node2)
+
+        def draw_cell(x, y, color="white"):
             canvas.create_rectangle(
                 x - width // 2 + black_border,
                 y - width // 2 + black_border,
                 x + width // 2 - black_border,
                 y + width // 2 - black_border,
-                fill="green" if node1.is_start and is_start else "white" if is_start else "blue",
+                fill = color,
                 outline=""
             )
 
-        draw_colored_rectangle(x2, y2)
-
-        dx = mag_d if x2 > x1 else -mag_d if x2 < x1 else 0
-        dy = mag_d if y2 > y1 else -mag_d if y2 < y1 else 0
+        dx = d if x2 > x1 else -d if x2 < x1 else 0
+        dy = d if y2 > y1 else -d if y2 < y1 else 0
 
         current_x, current_y = x1, y1
 
-        while current_x != x2 or current_y != y2:
-            def is_between(value, bound1, bound2, margin=self.cell_width//5):
-                lower, upper = min(bound1, bound2), max(bound1, bound2)
-                return lower + margin <= value <= upper - margin
+        while abs(current_x - x2)>abs(dx) or abs(current_y - y2)>abs(dy):
 
             if dx == 0:
-                if is_between(current_x, x1, x2) or is_between(current_y, y1, y2):
+                if abs(current_y - y1)>abs(width):
                     canvas.create_rectangle(
-                        current_x - width // 2, current_y,
-                        current_x + width // 2, current_y + dy,
+                        current_x - width // 2, max(y1, current_y)-width//2,
+                        current_x + width // 2, min(y1, current_y)+width//2,
                         fill="black", outline=""
                     )
                 canvas.create_rectangle(
-                    current_x - (width // 2 - black_border), current_y,
-                    current_x + (width // 2 - black_border), current_y + dy,
+                    current_x - (width // 2 - black_border), min(y1, current_y),
+                    current_x + (width // 2 - black_border), max(current_y, y1),
                     fill="white", outline=""
                 )
             else:
-                if is_between(current_x, x1, x2) or is_between(current_y, y1, y2):
+                if abs(current_x - x1)>abs(width):
                     canvas.create_rectangle(
-                        current_x, current_y - width // 2,
-                                   current_x + dx, current_y + width // 2,
+                        max(x1, current_x)-width//2, current_y - width // 2,
+                        min(x1, current_x)+width//2, current_y + width // 2,
                         fill="black", outline=""
                     )
                 canvas.create_rectangle(
-                    current_x, current_y - (width // 2 - black_border),
-                               current_x+dx, current_y + (width // 2 - black_border),
+                    min(x1, current_x), current_y - (width // 2 - black_border),
+                    max(current_x, x1), current_y + (width // 2 - black_border),
                     fill="white", outline=""
                 )
+            draw_cell(x2, y2, color="blue")
             canvas.update()
 
             current_x += dx
@@ -181,9 +170,14 @@ class MazeAlgorithm:
 
         bb = black_border if dx > 0 or dy > 0 else 0
         nbb = 0 if bb else -black_border
-        draw_colored_rectangle(x1, y1, is_start=True)
-
         if dx == 0:
+            canvas.create_rectangle(
+                x2 - width // 2,
+                min(y2, y1) + width//2,
+                x2 + width // 2,
+                max(y2, y1) - width//2,
+                fill="black", outline=""
+            )
             canvas.create_rectangle(
                 x2 - width // 2 + black_border,
                 y2 - width//2 - nbb,
@@ -191,7 +185,21 @@ class MazeAlgorithm:
                 y2 + width // 2 - bb,
                 fill="white", outline=""
             )
+            canvas.create_rectangle(
+                x2 - width // 2 + black_border,
+                min(y2, y1),
+                x2 + width // 2 - black_border,
+                max(y2, y1),
+                fill="white", outline=""
+            )
         else:
+            canvas.create_rectangle(
+                min(x2, x1) + width // 2,
+                y2 - width // 2,
+                max(x2, x1) - width//2,
+                y2 + width // 2,
+                fill="black", outline=""
+            )
             canvas.create_rectangle(
                 x2 - width // 2 - nbb,
                 y2 - width // 2 + black_border,
@@ -199,4 +207,14 @@ class MazeAlgorithm:
                 y2 + width // 2 - black_border,
                 fill="white", outline=""
             )
+            canvas.create_rectangle(
+                min(x2, x1),
+                y2 - width // 2 + black_border,
+                max(x2, x1),
+                y2 + width // 2 - black_border,
+                fill="white", outline=""
+            )
+
+        draw_cell(grid2Coord(start_node)[0], grid2Coord(start_node)[1], color="green")
+        draw_cell(grid2Coord(end_node)[0], grid2Coord(end_node)[1], color="red")
         canvas.update()
