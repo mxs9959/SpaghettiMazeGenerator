@@ -1,7 +1,9 @@
 import tkinter as tk
 import tkinter.messagebox
 from math import floor
-
+import glob
+import os
+from bfs_solver import BreadthFirstSolver  # the new solver file
 from maze import MazeAlgorithm
 from node import Node
 from load import export_maze_to_csv, export_maze_to_pdf
@@ -84,6 +86,34 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
+        # Solve Button
+        self.solve_btn = tk.Button(
+            self.config_frame, text="Solve Maze",
+            command=self.solve_maze
+        )
+        self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
+        self.solve_btn.config(state=tk.DISABLED)  # Initially disabled
+
+    def solve_maze(self):
+        if not self.current_maze_algorithm:
+            tk.messagebox.showerror("Error", "Generate a maze first!")
+            return
+
+        try:
+            # Get the most recent CSV export
+            latest_csv = max(glob.glob('maze_exports/*.csv'), key=os.path.getctime)
+
+            # Remove any previous solution visualization
+            self.canvas.delete("solution")
+
+            # Create solver and solve with visualization
+            solver = BreadthFirstSolver(self, latest_csv)
+            path = solver.solve_with_visualization()
+
+            if not path:
+                tk.messagebox.showinfo("Solve Result", "No path found between start and end nodes.")
+        except Exception as e:
+            tk.messagebox.showerror("Solve Error", str(e))
 
     def _create_canvas_frame(self):
         self.canvas_frame = tk.Frame(self.master)
@@ -225,6 +255,7 @@ class MazeGeneratorUI:
 
             return start_node, end_node
 
+        self.solve_btn.config(state=tk.NORMAL)
         grid = [[Node(x, y) for x in range(width)] for y in range(height)]
         maze_generation_complete(grid, self.speed_var)
 
