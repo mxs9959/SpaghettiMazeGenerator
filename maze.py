@@ -1,6 +1,7 @@
 import random
 
 from node import Edge
+from load import MazeImage
 
 class MazeAlgorithm:
     def __init__(self, ui, width, height, canvas_width=None, canvas_height=None):
@@ -32,6 +33,8 @@ class MazeAlgorithm:
                           ] + [
                               (0, dy) for dy in range(-round(height*ui.reach_var.get()/100), round(height*ui.reach_var.get()/100))
                           ]
+
+        self.image = MazeImage(canvas_width, canvas_height)
 
     def get_unvisited_neighbors(self, node, grid):
         random.shuffle(self.directions)
@@ -85,7 +88,9 @@ class MazeAlgorithm:
             if len(path) > 1:
                 prev_node = path[-2]
                 self.animate_rectangle(self.canvas, prev_node, current_node,
-                                       self.cell_width//2, self.speed_var.get())
+                                       self.cell_width//2, self.speed_var.get(), self.canvas.create_rectangle)
+                self.quick_rectangle(self.canvas, prev_node, current_node,
+                                       self.cell_width//2, self.speed_var.get(), self.image.draw_rectangle)
 
             neighbors = self.get_unvisited_neighbors(current_node, grid)
             for neighbor in neighbors:
@@ -104,7 +109,10 @@ class MazeAlgorithm:
             return True
         return False
 
-    def animate_rectangle(self, canvas, node1, node2, width, dist):
+    def animate_rectangle(self, canvas, node1, node2, width, dist, draw_rectangle_func=None):
+        # If no custom draw function provided, use default canvas.create_rectangle
+        if draw_rectangle_func is None:
+            draw_rectangle_func = canvas.create_rectangle
 
         def grid2Coord(node):
             return (node.x * self.cell_width + self.cell_width/2 + self.offset_x, node.y * self.cell_width + self.cell_width/2 + self.offset_y)
@@ -116,12 +124,12 @@ class MazeAlgorithm:
         x2, y2 = grid2Coord(node2)
 
         def draw_cell(x, y, color="white"):
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 x - width // 2 + black_border,
                 y - width // 2 + black_border,
                 x + width // 2 - black_border,
                 y + width // 2 - black_border,
-                fill = color,
+                fill=color,
                 outline=""
             )
 
@@ -134,24 +142,24 @@ class MazeAlgorithm:
 
             if dx == 0:
                 if abs(current_y - y1)>abs(width):
-                    canvas.create_rectangle(
+                    draw_rectangle_func(
                         current_x - width // 2, max(y1, current_y)-width//2,
                         current_x + width // 2, min(y1, current_y)+width//2,
                         fill="black", outline=""
                     )
-                canvas.create_rectangle(
+                draw_rectangle_func(
                     current_x - (width // 2 - black_border), min(y1, current_y),
                     current_x + (width // 2 - black_border), max(current_y, y1),
                     fill="white", outline=""
                 )
             else:
                 if abs(current_x - x1)>abs(width):
-                    canvas.create_rectangle(
+                    draw_rectangle_func(
                         max(x1, current_x)-width//2, current_y - width // 2,
                         min(x1, current_x)+width//2, current_y + width // 2,
                         fill="black", outline=""
                     )
-                canvas.create_rectangle(
+                draw_rectangle_func(
                     min(x1, current_x), current_y - (width // 2 - black_border),
                     max(current_x, x1), current_y + (width // 2 - black_border),
                     fill="white", outline=""
@@ -162,7 +170,7 @@ class MazeAlgorithm:
             current_x += dx
             current_y += dy
 
-        canvas.create_rectangle(
+        draw_rectangle_func(
             x2 - width // 2, y2 - width // 2,
             x2 + width // 2, y2 + width // 2,
             fill="black", outline=""
@@ -171,21 +179,21 @@ class MazeAlgorithm:
         bb = black_border if dx > 0 or dy > 0 else 0
         nbb = 0 if bb else -black_border
         if dx == 0:
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 x2 - width // 2,
                 min(y2, y1) + width//2,
                 x2 + width // 2,
                 max(y2, y1) - width//2,
                 fill="black", outline=""
             )
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 x2 - width // 2 + black_border,
                 y2 - width//2 - nbb,
                 x2 + width // 2 - black_border,
                 y2 + width // 2 - bb,
                 fill="white", outline=""
             )
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 x2 - width // 2 + black_border,
                 min(y2, y1),
                 x2 + width // 2 - black_border,
@@ -193,21 +201,103 @@ class MazeAlgorithm:
                 fill="white", outline=""
             )
         else:
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 min(x2, x1) + width // 2,
                 y2 - width // 2,
                 max(x2, x1) - width//2,
                 y2 + width // 2,
                 fill="black", outline=""
             )
-            canvas.create_rectangle(
+            draw_rectangle_func(
                 x2 - width // 2 - nbb,
                 y2 - width // 2 + black_border,
                 x2 + width // 2 - bb,
                 y2 + width // 2 - black_border,
                 fill="white", outline=""
             )
-            canvas.create_rectangle(
+            draw_rectangle_func(
+                min(x2, x1),
+                y2 - width // 2 + black_border,
+                max(x2, x1),
+                y2 + width // 2 - black_border,
+                fill="white", outline=""
+            )
+
+        draw_cell(grid2Coord(start_node)[0], grid2Coord(start_node)[1], color="green")
+        draw_cell(grid2Coord(end_node)[0], grid2Coord(end_node)[1], color="red")
+        canvas.update()
+
+    def quick_rectangle(self, canvas, node1, node2, width, dist="dummy parameter", draw_rectangle_func=None):
+        # If no custom draw function provided, use default canvas.create_rectangle
+        if draw_rectangle_func is None:
+            draw_rectangle_func = canvas.create_rectangle
+
+        def grid2Coord(node):
+            return (node.x * self.cell_width + self.cell_width/2 + self.offset_x, node.y * self.cell_width + self.cell_width/2 + self.offset_y)
+
+        black_border = 3
+        x1, y1 = grid2Coord(node1)
+        x2, y2 = grid2Coord(node2)
+
+        dx = 1 if x2 > x1 else -1 if x2 < x1 else 0
+        dy = 1 if y2 > y1 else -1 if y2 < y1 else 0
+
+        def draw_cell(x, y, color="white"):
+            draw_rectangle_func(
+                x - width // 2 + black_border,
+                y - width // 2 + black_border,
+                x + width // 2 - black_border,
+                y + width // 2 - black_border,
+                fill=color,
+                outline=""
+            )
+
+        draw_rectangle_func(
+            x2 - width // 2, y2 - width // 2,
+            x2 + width // 2, y2 + width // 2,
+            fill="black", outline=""
+        )
+
+        bb = black_border if dx > 0 or dy > 0 else 0
+        nbb = 0 if bb else -black_border
+        if dx == 0:
+            draw_rectangle_func(
+                x2 - width // 2,
+                min(y2, y1) + width//2,
+                x2 + width // 2,
+                max(y2, y1) - width//2,
+                fill="black", outline=""
+            )
+            draw_rectangle_func(
+                x2 - width // 2 + black_border,
+                y2 - width//2 - nbb,
+                x2 + width // 2 - black_border,
+                y2 + width // 2 - bb,
+                fill="white", outline=""
+            )
+            draw_rectangle_func(
+                x2 - width // 2 + black_border,
+                min(y2, y1),
+                x2 + width // 2 - black_border,
+                max(y2, y1),
+                fill="white", outline=""
+            )
+        else:
+            draw_rectangle_func(
+                min(x2, x1) + width // 2,
+                y2 - width // 2,
+                max(x2, x1) - width//2,
+                y2 + width // 2,
+                fill="black", outline=""
+            )
+            draw_rectangle_func(
+                x2 - width // 2 - nbb,
+                y2 - width // 2 + black_border,
+                x2 + width // 2 - bb,
+                y2 + width // 2 - black_border,
+                fill="white", outline=""
+            )
+            draw_rectangle_func(
                 min(x2, x1),
                 y2 - width // 2 + black_border,
                 max(x2, x1),

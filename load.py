@@ -1,20 +1,33 @@
-import csv
 import os
+import io
+import csv
 from datetime import datetime
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import inch
 import tkinter as tk
+from PIL import Image, ImageTk
+
+def export_maze_to_png(canvas_widget, image):
+    # Create export directory if it doesn't exist
+    export_dir = 'maze_exports'
+    os.makedirs(export_dir, exist_ok=True)
+
+    # Generate unique filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    png_filename = os.path.join(export_dir, f'maze_export_{timestamp}.png')
+
+    # Ensure the canvas is updated and fully rendered
+    canvas_widget.update()
+
+    # Get canvas dimensions
+    x = canvas_widget.winfo_rootx() + canvas_widget.winfo_x()
+    y = canvas_widget.winfo_rooty() + canvas_widget.winfo_y()
+    width = canvas_widget.winfo_width()
+    height = canvas_widget.winfo_height()
+
+    image.save_image(png_filename)
+
+    return png_filename
 
 def export_maze_to_csv(maze_algorithm):
-    """
-    Export maze graph to CSV with nodes and edges information
-
-    Args:
-        maze_algorithm (MazeAlgorithm): The maze algorithm instance containing graph data
-
-    Returns:
-        str: Path to the exported CSV file
-    """
     # Create export directory if it doesn't exist
     export_dir = 'maze_exports'
     os.makedirs(export_dir, exist_ok=True)
@@ -73,94 +86,35 @@ def export_maze_to_csv(maze_algorithm):
 
     return filepath
 
-def export_maze_to_pdf(canvas_widget):
-    """
-    Export maze canvas as a PDF with a screenshot of the canvas
+from PIL import Image, ImageDraw
 
-    Args:
-        canvas_widget (tk.Canvas): The Tkinter canvas containing the maze
+class MazeImage:
+    def __init__(self, width, height):
+        """
+        Initializes a blank PNG image with the specified width and height.
 
-    Returns:
-        str: Path to the exported PDF file
-    """
-    # Create export directory if it doesn't exist
-    export_dir = 'maze_exports'
-    os.makedirs(export_dir, exist_ok=True)
+        :param width: Width of the image
+        :param height: Height of the image
+        """
+        self.width = width
+        self.height = height
+        self.image = Image.new("RGB", (width, height), "black")
+        self.draw = ImageDraw.Draw(self.image)
 
-    # Generate unique filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    def draw_rectangle(self, x1, y1, x2, y2, fill="white", outline=""):
+        """
+        Draws a rectangle on the image.
 
-    # Capture canvas as an image
-    # Draw canvas content on a PostScript file first
-    ps_filename = os.path.join(export_dir, f'maze_image_{timestamp}.ps')
-    canvas_widget.postscript(
-        file=ps_filename,
-        colormode='color',
-        pageanchor='center',
-        pagex=canvas_widget.winfo_width()/2,
-        pagey=canvas_widget.winfo_height()/2
-    )
+        :param top_left: Tuple (x, y) for the top-left corner of the rectangle
+        :param bottom_right: Tuple (x, y) for the bottom-right corner of the rectangle
+        :param color: Color of the rectangle (e.g., "red", "#FF5733", (255, 87, 51))
+        """
+        self.draw.rectangle([(min(x1, x2), min(y1, y2)), (max(x1, x2), max(y1, y2))], fill=fill, outline=fill)
 
-    # Convert PostScript to PNG using Pillow
-    image_filename = os.path.join(export_dir, f'maze_image_{timestamp}.png')
-    pdf_filename = os.path.join(export_dir, f'maze_export_{timestamp}.pdf')
+    def save_image(self, file_name):
+        """
+        Saves the image to a file.
 
-    # Open PostScript file and convert to image
-    from PIL import Image, ImageTk
-    import ghostscript
-
-    # Use ghostscript to convert PS to PNG
-    gs_args = [
-        "gs",
-        "-dNOPAUSE",
-        "-dBATCH",
-        "-dSAFER",
-        "-sDEVICE=pngalpha",
-        f"-sOutputFile={image_filename}",
-        ps_filename
-    ]
-    ghostscript.import_gs()
-    gs_args = [arg.encode('utf-8') for arg in gs_args]
-    ghostscript.commandline(gs_args)
-
-    # Create PDF with the image
-    pdf_canvas = canvas.Canvas(pdf_filename, pagesize=(8.5*inch, 11*inch))
-
-    # Calculate scaling to fit image on letter-sized page
-    pdf_width, pdf_height = 8.5*inch, 11*inch
-    image = Image.open(image_filename)
-    image_width, image_height = image.size
-    image_aspect = image_width / image_height
-    page_aspect = pdf_width / pdf_height
-
-    if image_aspect > page_aspect:
-        # Image is wider relative to page
-        draw_width = pdf_width
-        draw_height = draw_width / image_aspect
-    else:
-        # Image is taller relative to page
-        draw_height = pdf_height
-        draw_width = draw_height * image_aspect
-
-    # Center the image on the page
-    x_centered = (pdf_width - draw_width) / 2
-    y_centered = (pdf_height - draw_height) / 2
-
-    # Draw image on PDF
-    pdf_canvas.drawImage(
-        image_filename,
-        x_centered, y_centered,
-        width=draw_width,
-        height=draw_height
-    )
-
-    # Add text description
-    pdf_canvas.setFont("Helvetica", 12)
-    pdf_canvas.drawCentredString(pdf_width/2, 0.5*inch, f"Maze Generated: {timestamp}")
-
-    pdf_canvas.save()
-
-    # Optional: Remove intermediate files
-    os.remove(ps_filename)
-
-    return pdf_filename
+        :param file_name: Name of the file to save the image
+        """
+        self.image.save(file_name, "PNG")

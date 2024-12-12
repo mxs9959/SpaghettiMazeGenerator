@@ -1,10 +1,9 @@
 import tkinter as tk
 import tkinter.messagebox
-from math import floor
-
+import tkinter.ttk as ttk
 from maze import MazeAlgorithm
 from node import Node
-from load import export_maze_to_csv, export_maze_to_pdf
+from load import export_maze_to_csv, export_maze_to_png
 
 class MazeGeneratorUI:
     def __init__(self, master):
@@ -18,6 +17,7 @@ class MazeGeneratorUI:
         # Flag to track maze generation
         self.maze_generating = False
         self.current_maze_algorithm = None
+        self.export_dropdown['values'] = ["CSV", "PNG"]
 
     def _create_config_frame(self):
         self.config_frame = tk.Frame(self.master)
@@ -44,12 +44,12 @@ class MazeGeneratorUI:
         # Reach limit Slider
         tk.Label(self.config_frame, text="Reach (%):").pack(side=tk.LEFT, padx=(10, 0))
         self.reach_var = tk.DoubleVar(value=25)
-        self.speed_slider = tk.Scale(
+        self.reach_slider = tk.Scale(
             self.config_frame, from_=1, to=100,
             resolution=1, orient=tk.HORIZONTAL,
             variable=self.reach_var, length=100
         )
-        self.speed_slider.pack(side=tk.LEFT, padx=5)
+        self.reach_slider.pack(side=tk.LEFT, padx=5)
 
         # Generate Button
         self.generate_btn = tk.Button(
@@ -58,21 +58,17 @@ class MazeGeneratorUI:
         )
         self.generate_btn.pack(side=tk.LEFT, padx=(10, 0))
 
-        # Export Button
-        self.export_btn = tk.Button(
-            self.config_frame, text="Export as CSV",
-            command=self.export_maze
+        # Export Dropdown
+        self.export_menu = tk.StringVar(value="Export")
+        self.export_dropdown = ttk.Combobox(
+            self.config_frame,
+            textvariable=self.export_menu,
+            values=["CSV", "PDF"],
+            state="readonly",
+            width=5
         )
-        self.export_btn.pack(side=tk.LEFT, padx=(10, 0))
-        self.export_btn.config(state=tk.DISABLED)  # Initially disabled
-
-        # Print Button
-        self.print_btn = tk.Button(
-            self.config_frame, text="Print",
-            command=self.print_maze
-        )
-        self.print_btn.pack(side=tk.LEFT, padx=(10, 0))
-        self.print_btn.config(state=tk.DISABLED)  # Initially disabled
+        self.export_dropdown.pack(side=tk.LEFT, padx=(10, 0))
+        self.export_dropdown.bind('<<ComboboxSelected>>', self.export_selected)
 
         # Status Banner
         self.status_banner = tk.Label(
@@ -84,6 +80,107 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
+        """
+        self.load_btn = tk.Button(
+            self.config_frame, text="Load",
+            command=self.maze_loader.load_maze_from_csv
+        )
+        self.load_btn.pack(side=tk.LEFT, padx=(10, 0))
+        """
+
+    def export_selected(self, event):
+        """Handle export based on selected option"""
+        export_type = self.export_menu.get()
+        if export_type == "CSV":
+            self.export_maze_csv()
+        elif export_type == "PNG":
+            self.export_maze_png()
+
+        # Reset dropdown
+        self.export_menu.set("Export")
+
+    def export_maze_csv(self):
+        """Export maze to CSV"""
+        if not self.current_maze_algorithm:
+            tk.messagebox.showerror("Error", "Generate a maze first!")
+            return
+
+        try:
+            # Export maze and get filepath
+            filepath = export_maze_to_csv(self.current_maze_algorithm)
+
+            # Show export success banner
+            self._show_banner(f"Exported maze to {filepath}", bg_color='green')
+        except Exception as e:
+            tk.messagebox.showerror("Export Error", str(e))
+
+    def export_maze_png(self):
+        """Export maze to PNG"""
+        if not self.current_maze_algorithm:
+            tk.messagebox.showerror("Error", "Generate a maze first!")
+            return
+
+        try:
+            # Export maze to PNG and get filepath
+            filepath = export_maze_to_png(self.canvas, self.current_maze_algorithm.image)
+
+            # Show export success banner
+            self._show_banner(f"Maze PNG exported to {filepath}", bg_color='green')
+        except Exception as e:
+            tk.messagebox.showerror("Export Error", str(e))
+
+    def generate_maze(self):
+        # Clear any existing banners
+        try:
+            self.status_banner.pack_forget()
+        except:
+            pass
+
+        # Set generation flag
+        self.maze_generating = True
+
+        # Clear canvas
+        self.canvas.delete("all")
+
+        try:
+            width = int(self.width_entry.get())
+            height = int(self.height_entry.get())
+        except ValueError:
+            tk.messagebox.showerror("Error", "Please enter valid width and height")
+            self.maze_generating = False
+            return
+
+        # Show generation banner
+        self._show_banner("Generating maze...", bg_color='blue')
+
+        # Fit canvas to window size
+        window_width = self.canvas.winfo_width()
+        window_height = self.canvas.winfo_height()
+
+        # Create maze algorithm with adjusted canvas dimensions
+        self.current_maze_algorithm = MazeAlgorithm(
+            self, width, height,
+            canvas_width=window_width,
+            canvas_height=window_height
+        )
+
+        # Wrapper to reset generation flag after maze is complete
+        def maze_generation_complete(grid, speed_var):
+            start_node, end_node = self.current_maze_algorithm.generate_maze(grid)
+
+            # Reset UI state
+            self.maze_generating = False
+
+            # Remove generation banner
+            try:
+                self.status_banner.pack_forget()
+            except:
+                pass
+
+            return start_node, end_node
+
+        grid = [[Node(x, y) for x in range(width)] for y in range(height)]
+        maze_generation_complete(grid, self.speed_var)
 
     def _create_canvas_frame(self):
         self.canvas_frame = tk.Frame(self.master)
@@ -179,10 +276,6 @@ class MazeGeneratorUI:
         # Set generation flag
         self.maze_generating = True
 
-        # Disable export and print buttons
-        self.export_btn.config(state=tk.DISABLED)
-        self.print_btn.config(state=tk.DISABLED)
-
         # Clear canvas
         self.canvas.delete("all")
 
@@ -214,8 +307,6 @@ class MazeGeneratorUI:
 
             # Reset UI state
             self.maze_generating = False
-            self.export_btn.config(state=tk.NORMAL)
-            self.print_btn.config(state=tk.NORMAL)
 
             # Remove generation banner
             try:
@@ -242,16 +333,17 @@ class MazeGeneratorUI:
         except Exception as e:
             tk.messagebox.showerror("Export Error", str(e))
 
+    # In case there are any leftover PDF export references, replace with PNG
     def print_maze(self):
         if not self.current_maze_algorithm:
             tk.messagebox.showerror("Error", "Generate a maze first!")
             return
 
         try:
-            # Export maze to PDF and get filepath
-            filepath = export_maze_to_pdf(self.canvas)
+            # Export maze to PNG and get filepath
+            filepath = export_maze_to_png(self.canvas)
 
             # Show export success banner
-            self._show_banner(f"Maze PDF exported to {filepath}", bg_color='green')
+            self._show_banner(f"Maze PNG exported to {filepath}", bg_color='green')
         except Exception as e:
-            tk.messagebox.showerror("Print Error", str(e))
+            tk.messagebox.showerror("Export Error", str(e))
