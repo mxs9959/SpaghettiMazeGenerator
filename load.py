@@ -7,13 +7,13 @@ import tkinter as tk
 
 def export_maze_to_csv(maze_algorithm):
     """
-    Export maze graph to CSV with nodes and edges information
+    Export maze graph to CSV with nodes and edges information.
 
     Args:
-        maze_algorithm (MazeAlgorithm): The maze algorithm instance containing graph data
+        maze_algorithm (MazeAlgorithm): The maze algorithm instance containing graph data.
 
     Returns:
-        str: Path to the exported CSV file
+        str: Path to the exported CSV file.
     """
     # Create export directory if it doesn't exist
     export_dir = 'maze_exports'
@@ -24,35 +24,32 @@ def export_maze_to_csv(maze_algorithm):
     filename = f'maze_export_{timestamp}.csv'
     filepath = os.path.join(export_dir, filename)
 
-    # Prepare node and edge data
-    nodes = []
-    edge_dict = {}
+    # Prepare nodes and adjacency list for edges
+    nodes = {}
+    edges = set()  # Use a set to avoid duplicate edges
 
-    # Collect all unique nodes and create adjacency list
     for edge in maze_algorithm.edges:
         node1, node2 = edge.node1, edge.node2
 
-        # Add nodes if not already in the dictionary
-        if node1 not in edge_dict:
-            edge_dict[node1] = []
-            nodes.append({
+        # Add nodes to the dictionary with their attributes
+        if (node1.x, node1.y) not in nodes:
+            nodes[(node1.x, node1.y)] = {
                 'x': node1.x,
                 'y': node1.y,
                 'is_start': node1.is_start,
                 'is_end': node1.is_end
-            })
-        if node2 not in edge_dict:
-            edge_dict[node2] = []
-            nodes.append({
+            }
+        if (node2.x, node2.y) not in nodes:
+            nodes[(node2.x, node2.y)] = {
                 'x': node2.x,
                 'y': node2.y,
                 'is_start': node2.is_start,
                 'is_end': node2.is_end
-            })
+            }
 
-        # Add edges to adjacency list
-        edge_dict[node1].append((node2.x, node2.y))
-        edge_dict[node2].append((node1.x, node1.y))
+        # Add edge to the set (ensure bidirectional consistency)
+        edges.add(((node1.x, node1.y), (node2.x, node2.y)))
+        edges.add(((node2.x, node2.y), (node1.x, node1.y)))  # Bidirectional edge
 
     # Write to CSV
     with open(filepath, 'w', newline='') as csvfile:
@@ -60,19 +57,21 @@ def export_maze_to_csv(maze_algorithm):
         csvfile.write("# Nodes\n")
         node_writer = csv.DictWriter(csvfile, fieldnames=['x', 'y', 'is_start', 'is_end'])
         node_writer.writeheader()
-        node_writer.writerows(nodes)
+        node_writer.writerows(nodes.values())
 
         # Write edges header
         csvfile.write("\n# Edges (Adjacency List)\n")
         csvfile.write("source_x,source_y,neighbor_x,neighbor_y\n")
 
-        # Write edges
-        for node, neighbors in edge_dict.items():
-            for neighbor in neighbors:
-                csvfile.write(f"{node.x},{node.y},{neighbor[0]},{neighbor[1]}\n")
+        # Write edges from the set
+        written_edges = set()  # Track written edges to avoid duplicates
+        for (source, target) in edges:
+            if (source, target) not in written_edges:  # Avoid duplicates
+                csvfile.write(f"{source[0]},{source[1]},{target[0]},{target[1]}\n")
+                written_edges.add((source, target))
+                written_edges.add((target, source))  # Mark reverse edge as written
 
     return filepath
-
 def export_maze_to_pdf(canvas_widget):
     """
     Export maze canvas as a PDF with a screenshot of the canvas
