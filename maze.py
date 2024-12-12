@@ -24,6 +24,7 @@ class MazeAlgorithm:
         self.offset_y = (canvas_height - (self.cell_height * height)) // 2
 
         self.edges = []
+        self.edges2 = []
         self.visited = set()
 
         # Directions initialization
@@ -40,8 +41,15 @@ class MazeAlgorithm:
             if (0 <= (new_x := node.x + dx) < self.width and
                 0 <= (new_y := node.y + dy) < self.height and
                 grid[new_y][new_x] not in self.visited and
-                self.add_edge(grid[new_y][new_x], node))
+                self.add_edge2(grid[new_y][new_x], node))
         ]
+
+    def is_connected(self, node_1, node_2):
+        # Check if there's an edge between node_1 and node_2 in the static edge list
+        return any(
+            {edge.node1, edge.node2} == {node_1, node_2}  # Check bidirectional connectivity
+            for edge in self.edges
+        )
 
     def generate_maze(self, grid):
         # Randomly select start and end nodes on opposite edges
@@ -86,6 +94,7 @@ class MazeAlgorithm:
                 prev_node = path[-2]
                 self.animate_rectangle(self.canvas, prev_node, current_node,
                                        self.cell_width//2, self.speed_var.get())
+                self.add_edge(prev_node, current_node)
 
             neighbors = self.get_unvisited_neighbors(current_node, grid)
             for neighbor in neighbors:
@@ -98,9 +107,17 @@ class MazeAlgorithm:
 
     def add_edge(self, node1, node2):
         new_edge = Edge(node1, node2)
-        if not any(edge.is_sub_edge(new_edge) or new_edge.is_sub_edge(edge)
-                   for edge in self.edges):
+        print(f"Attempting to add edge: {node1} -> {node2}")
+        if not any(edge.is_sub_edge(new_edge) for edge in self.edges):
             self.edges.append(new_edge)
+            print(f"Edge added: {node1} -> {node2}")
+            return True
+        print(f"Edge already exists: {node1} -> {node2}")
+        return False
+    def add_edge2(self, node1, node2):
+        new_edge = Edge(node1, node2)
+        if not any(edge.is_sub_edge(new_edge) for edge in self.edges2):
+            self.edges2.append(new_edge)
             return True
         return False
 

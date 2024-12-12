@@ -3,6 +3,9 @@ class Node:
         self.x, self.y = x, y
         self.is_start = is_start
         self.is_end = is_end
+    def __repr__(self):
+        return f"Node({self.x}, {self.y})"
+
 
 class Edge:
     def __init__(self, node1, node2):

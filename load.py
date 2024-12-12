@@ -48,8 +48,9 @@ def export_maze_to_csv(maze_algorithm):
             }
 
         # Add edge to the set (ensure bidirectional consistency)
-        edges.add(((node1.x, node1.y), (node2.x, node2.y)))
-        edges.add(((node2.x, node2.y), (node1.x, node1.y)))  # Bidirectional edge
+        if maze_algorithm.is_connected(node1,node2):  # Assuming `edge.is_connected` determines if the nodes are connected
+            edges.add(((node1.x, node1.y), (node2.x, node2.y)))
+            edges.add(((node2.x, node2.y), (node1.x, node1.y)))  # Bidirectional edge
 
     # Write to CSV
     with open(filepath, 'w', newline='') as csvfile:
