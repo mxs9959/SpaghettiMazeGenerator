@@ -112,7 +112,7 @@ class MazeAlgorithm:
             return True
         return False
 
-    def animate_rectangle(self, canvas, node1, node2, width, draw_rectangle_func=None):
+    def animate_rectangle(self, canvas, node1, node2, width, draw_rectangle_func=None, color="white"):
         # If no custom draw function provided, use default canvas.create_rectangle
         dist = self.speed_var.get()
         if draw_rectangle_func is None:
@@ -154,7 +154,7 @@ class MazeAlgorithm:
                 draw_rectangle_func(
                     current_x - (width // 2 - black_border), min(y1, current_y),
                     current_x + (width // 2 - black_border), max(current_y, y1),
-                    fill="white", outline=""
+                    fill=color, outline=""
                 )
             else:
                 if abs(current_x - x1)>abs(width):
@@ -166,7 +166,7 @@ class MazeAlgorithm:
                 draw_rectangle_func(
                     min(x1, current_x), current_y - (width // 2 - black_border),
                     max(current_x, x1), current_y + (width // 2 - black_border),
-                    fill="white", outline=""
+                    fill=color, outline=""
                 )
             draw_cell(x2, y2, color="blue")
             canvas.update()
@@ -195,14 +195,14 @@ class MazeAlgorithm:
                 y2 - width//2 - nbb,
                 x2 + width // 2 - black_border,
                 y2 + width // 2 - bb,
-                fill="white", outline=""
+                fill=color, outline=""
             )
             draw_rectangle_func(
                 x2 - width // 2 + black_border,
                 min(y2, y1),
                 x2 + width // 2 - black_border,
                 max(y2, y1),
-                fill="white", outline=""
+                fill=color, outline=""
             )
         else:
             draw_rectangle_func(
@@ -217,21 +217,21 @@ class MazeAlgorithm:
                 y2 - width // 2 + black_border,
                 x2 + width // 2 - bb,
                 y2 + width // 2 - black_border,
-                fill="white", outline=""
+                fill=color, outline=""
             )
             draw_rectangle_func(
                 min(x2, x1),
                 y2 - width // 2 + black_border,
                 max(x2, x1),
                 y2 + width // 2 - black_border,
-                fill="white", outline=""
+                fill=color, outline=""
             )
 
         draw_cell(grid2Coord(self.start_node)[0], grid2Coord(self.start_node)[1], color="green")
         draw_cell(grid2Coord(self.end_node)[0], grid2Coord(self.end_node)[1], color="red")
         canvas.update()
 
-    def quick_rectangle(self, canvas, node1, node2, width, dist="dummy parameter", draw_rectangle_func=None):
+    def quick_rectangle(self, canvas, node1, node2, width, dist="dummy parameter", draw_rectangle_func=None, color="white"):
         # If no custom draw function provided, use default canvas.create_rectangle
         if draw_rectangle_func is None:
             draw_rectangle_func = canvas.create_rectangle
@@ -277,14 +277,14 @@ class MazeAlgorithm:
                 y2 - width//2 - nbb,
                 x2 + width // 2 - black_border,
                 y2 + width // 2 - bb,
-                fill="white", outline=""
+                fill=color, outline=""
             )
             draw_rectangle_func(
                 x2 - width // 2 + black_border,
                 min(y2, y1),
                 x2 + width // 2 - black_border,
                 max(y2, y1),
-                fill="white", outline=""
+                fill=color, outline=""
             )
         else:
             draw_rectangle_func(
@@ -299,14 +299,14 @@ class MazeAlgorithm:
                 y2 - width // 2 + black_border,
                 x2 + width // 2 - bb,
                 y2 + width // 2 - black_border,
-                fill="white", outline=""
+                fill=color, outline=""
             )
             draw_rectangle_func(
                 min(x2, x1),
                 y2 - width // 2 + black_border,
                 max(x2, x1),
                 y2 + width // 2 - black_border,
-                fill="white", outline=""
+                fill=color, outline=""
             )
 
         draw_cell(grid2Coord(self.start_node)[0], grid2Coord(self.start_node)[1], color="green")

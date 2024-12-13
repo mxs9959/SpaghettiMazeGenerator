@@ -120,8 +120,8 @@ def import_maze_from_csv(ui):
     print(f"Imported maze of {len(imported_edges)} paths from {file_path}")
 
     for edge in imported_edges:
-        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2)
-        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, color=edge.color)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle, color=edge.color)
 
 
 class MazeImage:
