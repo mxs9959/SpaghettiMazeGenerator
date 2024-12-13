@@ -162,8 +162,15 @@ class BreadthFirstSolver:
             self.canvas.create_line(
                 x1, y1, x2, y2,
                 fill=color,
-                width=10,
+                width=5,
                 tags="solution"
+            )
+            radius = self.cell_width // 12
+
+            self.canvas.create_oval(
+                x2 - radius, y2 - radius,
+                x2 + radius, y2 + radius,
+                fill=color, outline="", tags="solution"
             )
             self.master.update()
             self.master.after(50)  # Small delay for visualization
@@ -178,7 +185,7 @@ class BreadthFirstSolver:
 
                 # Visualize the final path with yellow lines
                 for i in range(len(path) - 1):
-                    draw_line(path[i], path[i + 1], color="yellow")
+                    draw_line(path[i], path[i + 1], color="blue")
                 return path
 
             # Explore neighbors
