@@ -80,25 +80,23 @@ class BreadthFirstSolver:
         # Parse Edges
         for line in content[edges_start:]:
             row = line.strip().split(',')
-            if len(row) < 4:
+
+            # Ensure the row has exactly 4 values (source_x, source_y, neighbor_x, neighbor_y)
+            if len(row) != 4:
+                print(f"Skipping invalid edge row: {row}")
                 continue
 
             try:
-                source_x = int(row[0])
-                source_y = int(row[1])
-                neighbor_x = int(row[2])
-                neighbor_y = int(row[3])
-
+                # Parse source and neighbor coordinates
+                source_x, source_y, neighbor_x, neighbor_y = map(int, row)
                 source = (source_x, source_y)
                 neighbor = (neighbor_x, neighbor_y)
 
-                # Ensure bidirectional connections
-                if source not in self.graph[neighbor]:
-                    self.graph[source].append(neighbor)
-                if neighbor not in self.graph[source]:
-                    self.graph[neighbor].append(source)
+                # Add bidirectional connections
+                self.graph[source].append(neighbor)
+                self.graph[neighbor].append(source)
 
-            except (ValueError, IndexError) as e:
+            except ValueError as e:
                 print(f"Error parsing edge row {row}: {e}")
                 continue
 
@@ -138,12 +136,13 @@ class BreadthFirstSolver:
 
         print(f"Solving from {self.start_node} to {self.end_node}")
         print(f"Start node neighbors: {self.graph[self.start_node]}")
-        print(f"End node neighbors: {self.graph[self.end_node]}")
-
         # BFS queue and visited set
-        queue = deque([(self.start_node, [self.start_node])])
-        visited = set([self.start_node])
-        explored_nodes = set()
+        queue = deque()
+        queue.append((self.start_node, [self.start_node]))
+
+        # Set to track visited nodes
+        visited = set()
+        visited.add(self.start_node)  # Mark the start node as visited
 
         def grid2Coord(node):
             """Convert grid coordinates to canvas coordinates"""
@@ -151,45 +150,56 @@ class BreadthFirstSolver:
             return (x * self.cell_width + self.cell_width / 2 + self.offset_x,
                     y * self.cell_width + self.cell_width / 2 + self.offset_y)
 
-        def animate_node_exploration(node, is_path=False):
-            """Animate node exploration on the canvas"""
-            x, y = grid2Coord(node)
-            color = "yellow" if is_path else "purple"
-            radius = self.cell_width // 4
+        def draw_line(node1, node2, color):
+            """
+            Draw a line on the canvas between two nodes with the given color.
 
-            self.canvas.create_oval(
-                x - radius, y - radius,
-                x + radius, y + radius,
-                fill=color, outline="", tags="solution"
+            Args:
+                node1 (tuple): Coordinates of the first node (x1, y1).
+                node2 (tuple): Coordinates of the second node (x2, y2).
+                color (str): Color of the line to draw.
+            """
+            x1, y1 = grid2Coord(node1)
+            x2, y2 = grid2Coord(node2)
+
+            self.canvas.create_line(
+                x1, y1, x2, y2,
+                fill=color,
+                width=10,
+                tags="solution"
             )
             self.master.update()
             self.master.after(50)  # Small delay for visualization
 
         while queue:
+            # Dequeue the first element
             current_node, path = queue.popleft()
 
-            # Visualize explored node (not part of final path)
-            animate_node_exploration(current_node)
-            explored_nodes.add(current_node)
-
-            # Check if reached the end
+            # Check if we've reached the end node
             if current_node == self.end_node:
-                # Visualize solution path
-                for node in path:
-                    animate_node_exploration(node, is_path=True)
+                print(f"Path found: {path}")
+
+                # Visualize the final path with yellow lines
+                for i in range(len(path) - 1):
+                    draw_line(path[i], path[i + 1], color="yellow")
                 return path
 
             # Explore neighbors
-            neighbors = self.graph[current_node]
-            print(f"Exploring node {current_node}, neighbors: {neighbors}")
-
-            for neighbor in neighbors:
+            for neighbor in self.graph[current_node]:
                 if neighbor not in visited:
+                    # Mark the neighbor as visited
                     visited.add(neighbor)
+
+                    # Visualize the exploration with purple lines
+                    draw_line(current_node, neighbor, color="purple")
+
+                    # Add the neighbor and updated path to the queue
                     queue.append((neighbor, path + [neighbor]))
 
+            print(f"Explored node: {current_node}, Path so far: {path}")
+
         # No path found
-        print("No path found between start and end nodes!")
+        print("No path found!")
         messagebox.showinfo("Solve Result", "No path found between start and end nodes!")
         return None
 
@@ -197,7 +207,5 @@ class BreadthFirstSolver:
 def main():
     # Example usage can be implemented in the UI's solve method
     pass
-
-
 if __name__ == "__main__":
     main()
