@@ -5,6 +5,7 @@ from datetime import datetime
 from node import Node, Edge
 from tkinter import filedialog
 
+
 def export_maze_to_png(canvas_widget, image):
     # Create export directory if it doesn't exist
     export_dir = 'maze_exports'
@@ -21,9 +22,9 @@ def export_maze_to_png(canvas_widget, image):
 
     return png_filename
 
-def export_maze_to_csv(maze, output_filename='maze.csv'):
 
-    edges = maze.edges
+def export_maze_to_csv(maze, output_filename='maze.csv'):
+    edges = set()
 
     # Ensure the export directory exists
     export_dir = './maze_exports'
@@ -31,6 +32,11 @@ def export_maze_to_csv(maze, output_filename='maze.csv'):
 
     # Full path for the output file
     full_path = os.path.join(export_dir, output_filename)
+    for edge in maze.edges:
+        node1, node2 = edge.node1, edge.node2
+        if maze.is_connected(node1, node2):  # Assuming `edge.is_connected` determines if the nodes are connected
+            edges.add(((node1.x, node1.y), (node2.x, node2.y)))
+            edges.add(((node2.x, node2.y), (node1.x, node1.y)))  # Bidirectional edge
 
     # Write the CSV file
     with open(full_path, 'w', newline='') as csvfile:
@@ -42,21 +48,31 @@ def export_maze_to_csv(maze, output_filename='maze.csv'):
             'Node1_X', 'Node1_Y', 'Node1_IsStart', 'Node1_IsEnd',
             'Edge_Color'
         ])
-
-        # Write each edge's data
-        for edge in edges:
+        for edge in maze.edges:
             csv_writer.writerow([
-                edge.node1.x, edge.node1.y,
-                str(edge.node1.is_start), str(edge.node1.is_end),
-                edge.node2.x, edge.node2.y,
-                str(edge.node2.is_start), str(edge.node2.is_end),
+                node1.x, node1.y,
+                str(node1.is_start), str(node1.is_end),
+                node2.x, node2.y,
+                str(node2.is_start), str(node2.is_end),
                 edge.color
             ])
 
+        csvfile.write("\n# Edges (Adjacency List)\n")
+        csvfile.write("source_x,source_y,neighbor_x,neighbor_y\n")
+
+        # Write edges from the set
+        written_edges = set()  # Track written edges to avoid duplicates
+        for (source, target) in edges:
+            if (source, target) not in written_edges:  # Avoid duplicates
+                csvfile.write(f"{source[0]},{source[1]},{target[0]},{target[1]}\n")
+                written_edges.add((source, target))
+                written_edges.add((target, source))
+
+
     return full_path
 
-def import_maze_from_csv(ui):
 
+def import_maze_from_csv(ui):
     ui.generate_maze(True)
     # Open file dialog
     file_path = filedialog.askopenfilename(
@@ -120,8 +136,12 @@ def import_maze_from_csv(ui):
     print(f"Imported maze of {len(imported_edges)} paths from {file_path}")
 
     for edge in imported_edges:
-        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, color=edge.color)
-        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle, color=edge.color)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2,
+                                                  ui.current_maze_algorithm.cell_width // 2, color=edge.color)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2,
+                                                  ui.current_maze_algorithm.cell_width // 2,
+                                                  draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle,
+                                                  color=edge.color)
 
 
 class MazeImage:

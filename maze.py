@@ -50,6 +50,12 @@ class MazeAlgorithm:
                 self.add_edge(grid[new_y][new_x], node))
         ]
 
+    def is_connected(self, node_1, node_2):
+        # Check if there's already an edge between node_1 and node_2
+        return any(
+            {edge.node1, edge.node2} == {node_1, node_2}  # Compare nodes in the edge
+            for edge in self.edges
+        )
     def generate_maze(self, grid):
         # Randomly select start and end nodes on opposite edges
         start_side = random.choice(['top', 'bottom', 'left', 'right'])
