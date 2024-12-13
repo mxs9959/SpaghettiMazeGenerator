@@ -43,12 +43,14 @@ def export_maze_to_csv(maze, output_filename='maze.csv'):
         csv_writer = csv.writer(csvfile)
 
         # Write header
+        csv_writer.writerow(['# Nodes'])
         csv_writer.writerow([
             'Node0_X', 'Node0_Y', 'Node0_IsStart', 'Node0_IsEnd',
             'Node1_X', 'Node1_Y', 'Node1_IsStart', 'Node1_IsEnd',
             'Edge_Color'
         ])
         for edge in maze.edges:
+            node1, node2 = edge.node1, edge.node2
             csv_writer.writerow([
                 node1.x, node1.y,
                 str(node1.is_start), str(node1.is_end),

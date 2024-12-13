@@ -59,19 +59,25 @@ class BreadthFirstSolver:
             try:
                 x = int(row[0])
                 y = int(row[1])
+                x2,y2 = int(row[4]),int(row[5])
                 is_start = row[2].lower() == 'true'
-                is_end = row[3].lower() == 'true'
-
-                node = (x, y)
-                self.nodes.append(node)
+                is_end = row[7].lower() == 'true'
 
                 # Mark start and end nodes
                 if is_start:
+                    node = (x,y)
                     self.start_node = node
                     print(f"Found start node: {self.start_node}")
+                    self.nodes.append(node)
                 if is_end:
+                    node = (x2,y2)
                     self.end_node = node
                     print(f"Found end node: {self.end_node}")
+                    self.nodes.append(node)
+                if not is_start and not is_end:
+                    node = (x, y)
+                    self.nodes.append(node)
+
 
             except (ValueError, IndexError) as e:
                 print(f"Error parsing node row {row}: {e}")
