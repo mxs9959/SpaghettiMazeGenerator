@@ -206,10 +206,3 @@ class BreadthFirstSolver:
         print("No path found!")
         messagebox.showinfo("Solve Result", "No path found between start and end nodes!")
         return None
-
-
-def main():
-    # Example usage can be implemented in the UI's solve method
-    pass
-if __name__ == "__main__":
-    main()
