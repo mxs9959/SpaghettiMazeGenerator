@@ -5,10 +5,11 @@ class Node:
         self.is_end = is_end
 
 class Edge:
-    def __init__(self, node1, node2):
+    def __init__(self, node1, node2, color="white"):
         if not (isinstance(node1, Node) and isinstance(node2, Node)):
             raise TypeError("Both arguments must be instances of Node.")
         self.node1, self.node2 = node1, node2
+        self.color = color
 
     def is_sub_edge(self, other):
         # Check if nodes share x or y coordinate

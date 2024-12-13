@@ -3,7 +3,7 @@ import tkinter.messagebox
 import tkinter.ttk as ttk
 from maze import MazeAlgorithm
 from node import Node
-from load import export_maze_to_csv, export_maze_to_png
+from load import export_maze_to_csv, export_maze_to_png, import_maze_from_csv
 
 class MazeGeneratorUI:
     def __init__(self, master):
@@ -13,10 +13,10 @@ class MazeGeneratorUI:
         self._create_config_frame()
         self._create_canvas_frame()
         self._setup_zoom_pan()
+        self.current_maze_algorithm = None
 
         # Flag to track maze generation
         self.maze_generating = False
-        self.current_maze_algorithm = None
         self.export_dropdown['values'] = ["CSV", "PNG"]
 
     def _create_config_frame(self):
@@ -80,13 +80,15 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
-        """
+
         self.load_btn = tk.Button(
             self.config_frame, text="Load",
-            command=self.maze_loader.load_maze_from_csv
+            command=self.import_maze
         )
         self.load_btn.pack(side=tk.LEFT, padx=(10, 0))
-        """
+
+    def import_maze(self):
+        import_maze_from_csv(self)
 
     def export_selected(self, event):
         """Handle export based on selected option"""
@@ -129,7 +131,7 @@ class MazeGeneratorUI:
         except Exception as e:
             tk.messagebox.showerror("Export Error", str(e))
 
-    def generate_maze(self):
+    def generate_maze(self, load=False):
         # Clear any existing banners
         try:
             self.status_banner.pack_forget()
@@ -150,9 +152,6 @@ class MazeGeneratorUI:
             self.maze_generating = False
             return
 
-        # Show generation banner
-        self._show_banner("Generating maze...", bg_color='blue')
-
         # Fit canvas to window size
         window_width = self.canvas.winfo_width()
         window_height = self.canvas.winfo_height()
@@ -164,6 +163,11 @@ class MazeGeneratorUI:
             canvas_height=window_height
         )
 
+        if load:
+            return
+
+        # Show generation banner
+        self._show_banner("Generating maze...", bg_color='blue')
         # Wrapper to reset generation flag after maze is complete
         def maze_generation_complete(grid, speed_var):
             start_node, end_node = self.current_maze_algorithm.generate_maze(grid)
@@ -265,59 +269,6 @@ class MazeGeneratorUI:
 
         # Pan the canvas
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-
-    def generate_maze(self):
-        # Clear any existing banners
-        try:
-            self.status_banner.pack_forget()
-        except:
-            pass
-
-        # Set generation flag
-        self.maze_generating = True
-
-        # Clear canvas
-        self.canvas.delete("all")
-
-        try:
-            width = int(self.width_entry.get())
-            height = int(self.height_entry.get())
-        except ValueError:
-            tk.messagebox.showerror("Error", "Please enter valid width and height")
-            self.maze_generating = False
-            return
-
-        # Show generation banner
-        self._show_banner("Generating maze...", bg_color='blue')
-
-        # Fit canvas to window size
-        window_width = self.canvas.winfo_width()
-        window_height = self.canvas.winfo_height()
-
-        # Create maze algorithm with adjusted canvas dimensions
-        self.current_maze_algorithm = MazeAlgorithm(
-            self, width, height,
-            canvas_width=window_width,
-            canvas_height=window_height
-        )
-
-        # Wrapper to reset generation flag after maze is complete
-        def maze_generation_complete(grid, speed_var):
-            start_node, end_node = self.current_maze_algorithm.generate_maze(grid)
-
-            # Reset UI state
-            self.maze_generating = False
-
-            # Remove generation banner
-            try:
-                self.status_banner.pack_forget()
-            except:
-                pass
-
-            return start_node, end_node
-
-        grid = [[Node(x, y) for x in range(width)] for y in range(height)]
-        maze_generation_complete(grid, self.speed_var)
 
     def export_maze(self):
         if not self.current_maze_algorithm:

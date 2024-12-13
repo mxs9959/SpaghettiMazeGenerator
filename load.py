@@ -1,9 +1,9 @@
 import os
-import io
 import csv
+from PIL import Image, ImageDraw
 from datetime import datetime
-import tkinter as tk
-from PIL import Image, ImageTk
+from node import Node, Edge
+from tkinter import filedialog
 
 def export_maze_to_png(canvas_widget, image):
     # Create export directory if it doesn't exist
@@ -17,76 +17,112 @@ def export_maze_to_png(canvas_widget, image):
     # Ensure the canvas is updated and fully rendered
     canvas_widget.update()
 
-    # Get canvas dimensions
-    x = canvas_widget.winfo_rootx() + canvas_widget.winfo_x()
-    y = canvas_widget.winfo_rooty() + canvas_widget.winfo_y()
-    width = canvas_widget.winfo_width()
-    height = canvas_widget.winfo_height()
-
     image.save_image(png_filename)
 
     return png_filename
 
-def export_maze_to_csv(maze_algorithm):
-    # Create export directory if it doesn't exist
-    export_dir = 'maze_exports'
+def export_maze_to_csv(maze, output_filename='maze.csv'):
+
+    edges = maze.edges
+
+    # Ensure the export directory exists
+    export_dir = './maze_exports'
     os.makedirs(export_dir, exist_ok=True)
 
-    # Generate unique filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f'maze_export_{timestamp}.csv'
-    filepath = os.path.join(export_dir, filename)
+    # Full path for the output file
+    full_path = os.path.join(export_dir, output_filename)
 
-    # Prepare node and edge data
-    nodes = []
-    edge_dict = {}
+    # Write the CSV file
+    with open(full_path, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
 
-    # Collect all unique nodes and create adjacency list
-    for edge in maze_algorithm.edges:
-        node1, node2 = edge.node1, edge.node2
+        # Write header
+        csv_writer.writerow([
+            'Node0_X', 'Node0_Y', 'Node0_IsStart', 'Node0_IsEnd',
+            'Node1_X', 'Node1_Y', 'Node1_IsStart', 'Node1_IsEnd',
+            'Edge_Color'
+        ])
 
-        # Add nodes if not already in the dictionary
-        if node1 not in edge_dict:
-            edge_dict[node1] = []
-            nodes.append({
-                'x': node1.x,
-                'y': node1.y,
-                'is_start': node1.is_start,
-                'is_end': node1.is_end
-            })
-        if node2 not in edge_dict:
-            edge_dict[node2] = []
-            nodes.append({
-                'x': node2.x,
-                'y': node2.y,
-                'is_start': node2.is_start,
-                'is_end': node2.is_end
-            })
+        # Write each edge's data
+        for edge in edges:
+            csv_writer.writerow([
+                edge.node1.x, edge.node1.y,
+                str(edge.node1.is_start), str(edge.node1.is_end),
+                edge.node2.x, edge.node2.y,
+                str(edge.node2.is_start), str(edge.node2.is_end),
+                edge.color
+            ])
 
-        # Add edges to adjacency list
-        edge_dict[node1].append((node2.x, node2.y))
-        edge_dict[node2].append((node1.x, node1.y))
+    return full_path
 
-    # Write to CSV
-    with open(filepath, 'w', newline='') as csvfile:
-        # Write nodes header
-        csvfile.write("# Nodes\n")
-        node_writer = csv.DictWriter(csvfile, fieldnames=['x', 'y', 'is_start', 'is_end'])
-        node_writer.writeheader()
-        node_writer.writerows(nodes)
+def import_maze_from_csv(ui):
 
-        # Write edges header
-        csvfile.write("\n# Edges (Adjacency List)\n")
-        csvfile.write("source_x,source_y,neighbor_x,neighbor_y\n")
+    ui.generate_maze(True)
+    # Open file dialog
+    file_path = filedialog.askopenfilename(
+        title="Select CSV File to Import Edges",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+        initialdir='./maze_exports'
+    )
 
-        # Write edges
-        for node, neighbors in edge_dict.items():
-            for neighbor in neighbors:
-                csvfile.write(f"{node.x},{node.y},{neighbor[0]},{neighbor[1]}\n")
+    # If no file selected, return empty list
+    if not file_path:
+        print("No file selected.")
+        return []
 
-    return filepath
+    # List to store imported edges
+    imported_edges = []
 
-from PIL import Image, ImageDraw
+    # Read the CSV file
+    try:
+        with open(file_path, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile)
+
+            # Skip the header row
+            next(csv_reader)
+
+            # Process each row
+            for row in csv_reader:
+                # Convert string representations to appropriate types
+                node0 = Node(
+                    x=float(row[0]),
+                    y=float(row[1]),
+                    is_start=row[2].lower() == 'true',
+                    is_end=row[3].lower() == 'true'
+                )
+
+                node1 = Node(
+                    x=float(row[4]),
+                    y=float(row[5]),
+                    is_start=row[6].lower() == 'true',
+                    is_end=row[7].lower() == 'true'
+                )
+
+                if node0.is_start:
+                    ui.current_maze_algorithm.start_node = node0
+                if node1.is_start:
+                    ui.current_maze_algorithm.start_node = node1
+                if node0.is_end:
+                    ui.current_maze_algorithm.end_node = node0
+                if node1.is_end:
+                    ui.current_maze_algorithm.end_node = node1
+
+                # Create edge with the two nodes and color
+                edge = Edge(node0, node1, row[8])
+
+                # Add to list of imported edges
+                imported_edges.append(edge)
+
+    except Exception as e:
+        print(f"Error importing edges: {e}")
+        return []
+
+    print(f"Imported maze of {len(imported_edges)} paths from {file_path}")
+
+    for edge in imported_edges:
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2, ui.current_maze_algorithm.cell_width//2, draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle)
+
 
 class MazeImage:
     def __init__(self, width, height):

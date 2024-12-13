@@ -1,5 +1,4 @@
 import random
-
 from node import Edge
 from load import MazeImage
 
@@ -8,6 +7,10 @@ class MazeAlgorithm:
         self.canvas = ui.canvas
         self.width, self.height = width, height
         self.master = ui.master
+        self.ui = ui
+
+        self.end_node = None
+        self.start_node = None
 
         self.reach_var = ui.reach_var
         self.speed_var = ui.speed_var
@@ -25,6 +28,7 @@ class MazeAlgorithm:
         self.offset_y = (canvas_height - (self.cell_height * height)) // 2
 
         self.edges = []
+        self.edges2 = []
         self.visited = set()
 
         # Directions initialization
@@ -52,30 +56,28 @@ class MazeAlgorithm:
         end_side = {'top': 'bottom', 'bottom': 'top', 'left': 'right', 'right': 'left'}[start_side]
 
         # Select start node
-        global start_node
         if start_side == 'top':
-            start_node = grid[0][random.randint(0, self.width-1)]
+            self.start_node = grid[0][random.randint(0, self.width-1)]
         elif start_side == 'bottom':
-            start_node = grid[self.height-1][random.randint(0, self.width-1)]
+            self.start_node = grid[self.height-1][random.randint(0, self.width-1)]
         elif start_side == 'left':
-            start_node = grid[random.randint(0, self.height-1)][0]
+            self.start_node = grid[random.randint(0, self.height-1)][0]
         else:  # right
-            start_node = grid[random.randint(0, self.height-1)][self.width-1]
+            self.start_node = grid[random.randint(0, self.height-1)][self.width-1]
 
         # Select end node
-        global end_node
         if end_side == 'top':
-            end_node = grid[0][random.randint(0, self.width-1)]
+            self.end_node = grid[0][random.randint(0, self.width-1)]
         elif end_side == 'bottom':
-            end_node = grid[self.height-1][random.randint(0, self.width-1)]
+            self.end_node = grid[self.height-1][random.randint(0, self.width-1)]
         elif end_side == 'left':
-            end_node = grid[random.randint(0, self.height-1)][0]
+            self.end_node = grid[random.randint(0, self.height-1)][0]
         else:  # right
-            end_node = grid[random.randint(0, self.height-1)][self.width-1]
+            self.end_node = grid[random.randint(0, self.height-1)][self.width-1]
 
         # Mark start and end nodes
-        start_node.is_start = True
-        end_node.is_end = True
+        self.start_node.is_start = True
+        self.end_node.is_end = True
 
         self.visited = set()
         path = []
@@ -88,29 +90,31 @@ class MazeAlgorithm:
             if len(path) > 1:
                 prev_node = path[-2]
                 self.animate_rectangle(self.canvas, prev_node, current_node,
-                                       self.cell_width//2, self.speed_var.get(), self.canvas.create_rectangle)
+                                       self.cell_width//2, self.canvas.create_rectangle)
                 self.quick_rectangle(self.canvas, prev_node, current_node,
                                        self.cell_width//2, self.speed_var.get(), self.image.draw_rectangle)
+                self.edges.append(Edge(prev_node, current_node))
 
             neighbors = self.get_unvisited_neighbors(current_node, grid)
             for neighbor in neighbors:
                 if neighbor not in self.visited:
                     dfs(neighbor)
             path.pop()
-        dfs(start_node)
+        dfs(self.start_node)
         print("Maze generation completed.")
-        return start_node, end_node
+        return self.start_node, self.end_node
 
     def add_edge(self, node1, node2):
         new_edge = Edge(node1, node2)
         if not any(edge.is_sub_edge(new_edge) or new_edge.is_sub_edge(edge)
-                   for edge in self.edges):
-            self.edges.append(new_edge)
+                   for edge in self.edges2):
+            self.edges2.append(new_edge)
             return True
         return False
 
-    def animate_rectangle(self, canvas, node1, node2, width, dist, draw_rectangle_func=None):
+    def animate_rectangle(self, canvas, node1, node2, width, draw_rectangle_func=None):
         # If no custom draw function provided, use default canvas.create_rectangle
+        dist = self.speed_var.get()
         if draw_rectangle_func is None:
             draw_rectangle_func = canvas.create_rectangle
 
@@ -223,8 +227,8 @@ class MazeAlgorithm:
                 fill="white", outline=""
             )
 
-        draw_cell(grid2Coord(start_node)[0], grid2Coord(start_node)[1], color="green")
-        draw_cell(grid2Coord(end_node)[0], grid2Coord(end_node)[1], color="red")
+        draw_cell(grid2Coord(self.start_node)[0], grid2Coord(self.start_node)[1], color="green")
+        draw_cell(grid2Coord(self.end_node)[0], grid2Coord(self.end_node)[1], color="red")
         canvas.update()
 
     def quick_rectangle(self, canvas, node1, node2, width, dist="dummy parameter", draw_rectangle_func=None):
@@ -305,6 +309,6 @@ class MazeAlgorithm:
                 fill="white", outline=""
             )
 
-        draw_cell(grid2Coord(start_node)[0], grid2Coord(start_node)[1], color="green")
-        draw_cell(grid2Coord(end_node)[0], grid2Coord(end_node)[1], color="red")
+        draw_cell(grid2Coord(self.start_node)[0], grid2Coord(self.start_node)[1], color="green")
+        draw_cell(grid2Coord(self.end_node)[0], grid2Coord(self.end_node)[1], color="red")
         canvas.update()
