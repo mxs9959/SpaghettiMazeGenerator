@@ -16,7 +16,7 @@ def main():
     root.title("Spaghetti Supper")
 
     # Increase window size by 75%
-    window_width = int(600 * 1.75)
+    window_width = int(750 * 1.75)
     window_height = int(700 * 1.75)
 
     # Center the window

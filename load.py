@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 from datetime import datetime
 from node import Node, Edge
 from tkinter import filedialog
-from bfs_solver import BreadthFirstSolver
+from solver import BreadthFirstSolver,DepthFirstSolver
 
 
 def export_maze_to_png(canvas_widget, image):
@@ -75,7 +75,7 @@ def export_maze_to_csv(maze, output_filename='maze.csv'):
     return full_path
 
 
-def import_maze_from_csv(ui, solve=False):
+def import_maze_from_csv(ui, solve_type, solve=False):
     ui.generate_maze(True)
     # Open file dialog
     file_path = filedialog.askopenfilename(
@@ -150,8 +150,12 @@ def import_maze_from_csv(ui, solve=False):
                                                   color=edge.color)
 
     if solve:
-        solver = BreadthFirstSolver(ui, file_path)
-        solver.solve_with_visualization()
+        if solve_type == "bfs":
+            solver = BreadthFirstSolver(ui, file_path)
+            solver.solve_with_visualization()
+        elif solve_type == "dfs":
+            solver = DepthFirstSolver(ui, file_path)
+            solver.solve_with_visualization()
 
     ui.maze_generation_complete()
 
