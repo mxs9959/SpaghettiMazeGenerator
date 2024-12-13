@@ -1,19 +1,10 @@
-import csv
 import tkinter as tk
 from collections import deque, defaultdict
-import random
 import tkinter.messagebox as messagebox
-
 
 class BreadthFirstSolver:
     def __init__(self, ui, csv_file):
-        """
-        Initialize the maze solver by reading the CSV file and setting up UI
 
-        Args:
-            ui (tk.Tk): The main UI window
-            csv_file (str): Path to the CSV file containing maze graph data
-        """
         self.canvas = ui.canvas
         self.master = ui.master
         self.nodes = []

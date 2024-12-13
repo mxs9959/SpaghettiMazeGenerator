@@ -1,11 +1,8 @@
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.ttk as ttk
-import glob
-from bfs_solver import BreadthFirstSolver
 from maze import MazeAlgorithm
 from node import Node
-import os
 from load import export_maze_to_csv, export_maze_to_png, import_maze_from_csv
 
 class MazeGeneratorUI:
@@ -54,6 +51,16 @@ class MazeGeneratorUI:
         )
         self.reach_slider.pack(side=tk.LEFT, padx=5)
 
+        # Bias probability Slider
+        tk.Label(self.config_frame, text="Parallel Bias (%):").pack(side=tk.LEFT, padx=(10, 0))
+        self.bias = tk.DoubleVar(value=0)
+        self.reach_slider = tk.Scale(
+            self.config_frame, from_=0, to=100,
+            resolution=1, orient=tk.HORIZONTAL,
+            variable=self.bias, length=100
+        )
+        self.reach_slider.pack(side=tk.LEFT, padx=5)
+
         # Generate Button
         self.generate_btn = tk.Button(
             self.config_frame, text="Generate",
@@ -73,6 +80,20 @@ class MazeGeneratorUI:
         self.export_dropdown.pack(side=tk.LEFT, padx=(10, 0))
         self.export_dropdown.bind('<<ComboboxSelected>>', self.export_selected)
 
+        # Load Button
+        self.solve_btn = tk.Button(
+            self.config_frame, text="Load CSV",
+            command=self.import_maze
+        )
+        self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
+
+        # Solve Button
+        self.solve_btn = tk.Button(
+            self.config_frame, text="Solve Maze",
+            command=self.solve_maze
+        )
+        self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
+
         # Status Banner
         self.status_banner = tk.Label(
             self.config_frame,
@@ -83,34 +104,10 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
-        # Solve Button
-        self.solve_btn = tk.Button(
-            self.config_frame, text="Solve Maze",
-            command=self.solve_maze
-        )
-        self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
-        self.solve_btn.config(state=tk.DISABLED)  # Initially disabled
 
     def solve_maze(self):
-        if not self.current_maze_algorithm:
-            tk.messagebox.showerror("Error", "Generate a maze first!")
-            return
+        import_maze_from_csv(self, True)
 
-        try:
-            # Get the most recent CSV export
-            latest_csv = max(glob.glob('maze_exports/*.csv'), key=os.path.getctime)
-
-            # Remove any previous solution visualization
-            self.canvas.delete("solution")
-
-            # Create solver and solve with visualization
-            solver = BreadthFirstSolver(self, latest_csv)
-            path = solver.solve_with_visualization()
-
-            if not path:
-                tk.messagebox.showinfo("Solve Result", "No path found between start and end nodes.")
-        except Exception as e:
-            tk.messagebox.showerror("Solve Error", str(e))
     def import_maze(self):
         import_maze_from_csv(self)
 
@@ -192,24 +189,20 @@ class MazeGeneratorUI:
 
         # Show generation banner
         self._show_banner("Generating maze...", bg_color='blue')
-        # Wrapper to reset generation flag after maze is complete
-        def maze_generation_complete(grid, speed_var):
-            start_node, end_node = self.current_maze_algorithm.generate_maze(grid)
+        grid = [[Node(x, y) for x in range(self.current_maze_algorithm.width)] for y in range(self.current_maze_algorithm.height)]
+        self.current_maze_algorithm.generate_maze(grid)
+        self.maze_generation_complete()
 
-            # Reset UI state
-            self.maze_generating = False
+    def maze_generation_complete(self):
 
-            # Remove generation banner
-            try:
-                self.status_banner.pack_forget()
-            except:
-                pass
+        # Reset UI state
+        self.maze_generating = False
 
-            return start_node, end_node
-
-        grid = [[Node(x, y) for x in range(width)] for y in range(height)]
-        maze_generation_complete(grid, self.speed_var)
-        self.solve_btn.config(state=tk.NORMAL)
+        # Remove generation banner
+        try:
+            self.status_banner.pack_forget()
+        except:
+            pass
 
     def _create_canvas_frame(self):
         self.canvas_frame = tk.Frame(self.master)

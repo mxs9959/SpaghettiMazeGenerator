@@ -1,6 +1,7 @@
 import random
 from node import Edge
 from load import MazeImage
+from math import floor
 
 class MazeAlgorithm:
     def __init__(self, ui, width, height, canvas_width=None, canvas_height=None):
@@ -28,14 +29,13 @@ class MazeAlgorithm:
         self.offset_y = (canvas_height - (self.cell_height * height)) // 2
 
         self.edges = []
-        self.edges2 = []
         self.visited = set()
 
         # Directions initialization
         self.directions = [
-                              (dx, 0) for dx in range(-round(width*ui.reach_var.get()/100), round(width*ui.reach_var.get()/100))
+                              (dx, 0) for dx in range(-floor(width*ui.reach_var.get()/100), floor(width*ui.reach_var.get()/100))
                           ] + [
-                              (0, dy) for dy in range(-round(height*ui.reach_var.get()/100), round(height*ui.reach_var.get()/100))
+                              (0, dy) for dy in range(-floor(height*ui.reach_var.get()/100), floor(height*ui.reach_var.get()/100))
                           ]
 
         self.image = MazeImage(canvas_width, canvas_height)
@@ -49,6 +49,33 @@ class MazeAlgorithm:
                 grid[new_y][new_x] not in self.visited and
                 self.add_edge(grid[new_y][new_x], node))
         ]
+
+    def parallel_bias(self, neighbors, grid):
+        """
+        Reorder adjacent nodes based on how many already-explored nodes are touched by each.
+
+        Args:
+            neighbors (list): List of adjacent nodes returned by get_unvisited_neighbors.
+            grid (list): 2D array of nodes representing the maze grid.
+
+        Returns:
+            list: Reordered list of adjacent nodes.
+        """
+        def count_explored_neighbors(node):
+            explored_count = 0
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+
+            for dx, dy in directions:
+                nx, ny = node.x + dx, node.y + dy
+                if 0 <= nx < self.width and 0 <= ny < self.height:
+                    neighbor = grid[ny][nx]
+                    if neighbor in self.visited:
+                        explored_count += 1
+
+            return explored_count
+
+        # Sort the neighbors based on the number of explored neighbors (descending order)
+        return sorted(neighbors, key=count_explored_neighbors, reverse=True)
 
     def is_connected(self, node_1, node_2):
         # Check if there's already an edge between node_1 and node_2
@@ -98,12 +125,14 @@ class MazeAlgorithm:
                 self.animate_rectangle(self.canvas, prev_node, current_node,
                                        self.cell_width//2, self.canvas.create_rectangle)
                 self.quick_rectangle(self.canvas, prev_node, current_node,
-                                       self.cell_width//2, self.speed_var.get(), self.image.draw_rectangle)
+                                       self.cell_width//2, self.image.draw_rectangle)
                 self.edges.append(Edge(prev_node, current_node))
 
             neighbors = self.get_unvisited_neighbors(current_node, grid)
+            if self.ui.bias.get()/100>random.random():
+                neighbors = self.parallel_bias(neighbors, grid)
             for neighbor in neighbors:
-                if neighbor not in self.visited:
+                if neighbor not in self.visited and self.add_edge(neighbor, current_node):
                     dfs(neighbor)
             path.pop()
         dfs(self.start_node)
@@ -112,11 +141,8 @@ class MazeAlgorithm:
 
     def add_edge(self, node1, node2):
         new_edge = Edge(node1, node2)
-        if not any(edge.is_sub_edge(new_edge) or new_edge.is_sub_edge(edge)
-                   for edge in self.edges2):
-            self.edges2.append(new_edge)
-            return True
-        return False
+        return not any(edge.is_sub_edge(new_edge) or new_edge.is_sub_edge(edge)
+                   for edge in self.edges)
 
     def animate_rectangle(self, canvas, node1, node2, width, draw_rectangle_func=None, color="white"):
         # If no custom draw function provided, use default canvas.create_rectangle
@@ -237,7 +263,7 @@ class MazeAlgorithm:
         draw_cell(grid2Coord(self.end_node)[0], grid2Coord(self.end_node)[1], color="red")
         canvas.update()
 
-    def quick_rectangle(self, canvas, node1, node2, width, dist="dummy parameter", draw_rectangle_func=None, color="white"):
+    def quick_rectangle(self, canvas, node1, node2, width, draw_rectangle_func=None, color="white"):
         # If no custom draw function provided, use default canvas.create_rectangle
         if draw_rectangle_func is None:
             draw_rectangle_func = canvas.create_rectangle

@@ -15,19 +15,20 @@ class Edge:
         self.color = color
 
     def is_sub_edge(self, other):
-        # Check if nodes share x or y coordinate
-        if not (
-                (self.node1.x == other.node1.x == self.node2.x == other.node2.x) or
-                (self.node1.y == other.node1.y == self.node2.y == other.node2.y)
-        ):
+        # Check if the edges are on the same line (either horizontal or vertical)
+        is_horizontal_line = (self.node1.y == self.node2.y == other.node1.y == other.node2.y)
+        is_vertical_line = (self.node1.x == self.node2.x == other.node1.x == other.node2.x)
+
+        if not (is_horizontal_line or is_vertical_line):
             return False
 
-        # Determine the shared coordinate (x or y)
-        if self.node1.x == other.node1.x:  # x is shared
-            self_range = sorted([self.node1.y, self.node2.y])
-            other_range = sorted([other.node1.y, other.node2.y])
-        else:  # y is shared
+        # Determine the shared coordinate and the ranges
+        if is_horizontal_line:
             self_range = sorted([self.node1.x, self.node2.x])
             other_range = sorted([other.node1.x, other.node2.x])
+        else:  # vertical line
+            self_range = sorted([self.node1.y, self.node2.y])
+            other_range = sorted([other.node1.y, other.node2.y])
 
+        # Check for overlap
         return not (self_range[1] <= other_range[0] or self_range[0] >= other_range[1])

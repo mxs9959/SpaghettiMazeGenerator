@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 from datetime import datetime
 from node import Node, Edge
 from tkinter import filedialog
+from bfs_solver import BreadthFirstSolver
 
 
 def export_maze_to_png(canvas_widget, image):
@@ -74,7 +75,7 @@ def export_maze_to_csv(maze, output_filename='maze.csv'):
     return full_path
 
 
-def import_maze_from_csv(ui):
+def import_maze_from_csv(ui, solve=False):
     ui.generate_maze(True)
     # Open file dialog
     file_path = filedialog.askopenfilename(
@@ -93,43 +94,46 @@ def import_maze_from_csv(ui):
 
     # Read the CSV file
     try:
-        with open(file_path, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile)
+        csvfile = open(file_path, 'r')
+        csv_reader = csv.reader(csvfile)
 
-            # Skip the header row
-            next(csv_reader)
+        # Skip the header row
+        next(csv_reader)
+        next(csv_reader)
 
-            # Process each row
-            for row in csv_reader:
-                # Convert string representations to appropriate types
-                node0 = Node(
-                    x=float(row[0]),
-                    y=float(row[1]),
-                    is_start=row[2].lower() == 'true',
-                    is_end=row[3].lower() == 'true'
-                )
+        # Process each row
+        for row in csv_reader:
+            if len(row) <= 4: #Skip Lahiji rows
+                continue
+            # Convert string representations to appropriate types
+            node0 = Node(
+                x=float(row[0]),
+                y=float(row[1]),
+                is_start=row[2].lower() == 'true',
+                is_end=row[3].lower() == 'true'
+            )
 
-                node1 = Node(
-                    x=float(row[4]),
-                    y=float(row[5]),
-                    is_start=row[6].lower() == 'true',
-                    is_end=row[7].lower() == 'true'
-                )
+            node1 = Node(
+                x=float(row[4]),
+                y=float(row[5]),
+                is_start=row[6].lower() == 'true',
+                is_end=row[7].lower() == 'true'
+            )
 
-                if node0.is_start:
-                    ui.current_maze_algorithm.start_node = node0
-                if node1.is_start:
-                    ui.current_maze_algorithm.start_node = node1
-                if node0.is_end:
-                    ui.current_maze_algorithm.end_node = node0
-                if node1.is_end:
-                    ui.current_maze_algorithm.end_node = node1
+            if node0.is_start:
+                ui.current_maze_algorithm.start_node = node0
+            if node1.is_start:
+                ui.current_maze_algorithm.start_node = node1
+            if node0.is_end:
+                ui.current_maze_algorithm.end_node = node0
+            if node1.is_end:
+                ui.current_maze_algorithm.end_node = node1
 
-                # Create edge with the two nodes and color
-                edge = Edge(node0, node1, row[8])
+            # Create edge with the two nodes and color
+            edge = Edge(node0, node1, row[8])
 
-                # Add to list of imported edges
-                imported_edges.append(edge)
+            # Add to list of imported edges
+            imported_edges.append(edge)
 
     except Exception as e:
         print(f"Error importing edges: {e}")
@@ -144,6 +148,12 @@ def import_maze_from_csv(ui):
                                                   ui.current_maze_algorithm.cell_width // 2,
                                                   draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle,
                                                   color=edge.color)
+
+    if solve:
+        solver = BreadthFirstSolver(ui, file_path)
+        solver.solve_with_visualization()
+
+    ui.maze_generation_complete()
 
 
 class MazeImage:
