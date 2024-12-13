@@ -87,12 +87,16 @@ class MazeGeneratorUI:
         )
         self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
 
-        # Solve Button
-        self.solve_btn = tk.Button(
-            self.config_frame, text="Solve Maze",
-            command=self.solve_maze
+        self.solve_menu = tk.StringVar(value="Solve")
+        self.solve_dropdown = ttk.Combobox(
+            self.config_frame,
+            textvariable=self.solve_menu,
+            values=["BFS", "DFS"],
+            state="readonly",
+            width=5
         )
-        self.solve_btn.pack(side=tk.LEFT, padx=(10, 0))
+        self.solve_dropdown.pack(side=tk.LEFT, padx=(10, 0))
+        self.solve_dropdown.bind('<<ComboboxSelected>>', self.solve_selected)
 
         # Status Banner
         self.status_banner = tk.Label(
@@ -104,12 +108,18 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
+    def solve_selected(self, event):
+        solve_type = self.solve_menu.get()
+        if solve_type == "BFS":
+            import_maze_from_csv(self, "bfs", True)
+        elif solve_type == "DFS":
+            import_maze_from_csv(self, "dfs", True)
 
-    def solve_maze(self):
-        import_maze_from_csv(self, True)
+        # Reset dropdown
+        self.solve_menu.set("Solve")
 
     def import_maze(self):
-        import_maze_from_csv(self)
+        import_maze_from_csv(self,"dfs")
 
     def export_selected(self, event):
         """Handle export based on selected option"""
