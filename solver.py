@@ -2,8 +2,8 @@ import tkinter as tk
 from collections import deque, defaultdict
 import tkinter.messagebox as messagebox
 class DepthFirstSolver:
-    def __init__(self, ui, csv_file):
-
+    def __init__(self, ui, csv_file, image):
+        self.image = image
         self.canvas = ui.canvas
         self.master = ui.master
         self.nodes = []
@@ -165,12 +165,16 @@ class DepthFirstSolver:
                 tags="solution"
             )
             radius = self.cell_width // 12
-
             self.canvas.create_oval(
                 x2 - radius, y2 - radius,
                 x2 + radius, y2 + radius,
                 fill=color, outline="", tags="solution"
             )
+            #For export PNG image
+            self.image.draw_line(x1, y1, x2, y2, fill=color, width=5)
+            self.image.draw_ellipse(x2 - radius, y2 - radius,
+                                    x2 + radius, y2 + radius,
+                                    fill=color, outline="")
             self.master.update()
             self.master.after(50)  # Small delay for visualization
 
@@ -208,8 +212,8 @@ class DepthFirstSolver:
 
 
 class BreadthFirstSolver:
-    def __init__(self, ui, csv_file):
-
+    def __init__(self, ui, csv_file, image):
+        self.image = image
         self.canvas = ui.canvas
         self.master = ui.master
         self.nodes = []
@@ -377,6 +381,11 @@ class BreadthFirstSolver:
                 x2 + radius, y2 + radius,
                 fill=color, outline="", tags="solution"
             )
+            #For export PNG image
+            self.image.draw_line(x1, y1, x2, y2, fill=color, width=5)
+            self.image.draw_ellipse(x2 - radius, y2 - radius,
+                                    x2 + radius, y2 + radius,
+                                    fill=color, outline="")
             self.master.update()
             self.master.after(50)  # Small delay for visualization
 

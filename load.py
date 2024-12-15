@@ -3,11 +3,13 @@ import csv
 from PIL import Image, ImageDraw
 from datetime import datetime
 from node import Node, Edge
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from solver import BreadthFirstSolver,DepthFirstSolver
 
+solution_image = None
 
 def export_maze_to_png(canvas_widget, image):
+    global solution_image
     # Create export directory if it doesn't exist
     export_dir = 'maze_exports'
     os.makedirs(export_dir, exist_ok=True)
@@ -15,6 +17,10 @@ def export_maze_to_png(canvas_widget, image):
     # Generate unique filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     png_filename = os.path.join(export_dir, f'maze_export_{timestamp}.png')
+
+    if solution_image is not None and messagebox.askyesno("Confirmation", "Would you like to export the solution as well?"):
+        png_solution_filename = os.path.join(export_dir, f'solution_maze_export_{timestamp}.png')
+        solution_image.save_image(png_solution_filename)
 
     # Ensure the canvas is updated and fully rendered
     canvas_widget.update()
@@ -141,6 +147,9 @@ def import_maze_from_csv(ui, solve_type, solve=False):
 
     print(f"Imported maze of {len(imported_edges)} paths from {file_path}")
 
+    global solution_image
+    if solve:
+        solution_image = MazeImage(ui.canvas.winfo_width(), ui.canvas.winfo_height())
     for edge in imported_edges:
         ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2,
                                                   ui.current_maze_algorithm.cell_width // 2, color=edge.color)
@@ -148,17 +157,20 @@ def import_maze_from_csv(ui, solve_type, solve=False):
                                                   ui.current_maze_algorithm.cell_width // 2,
                                                   draw_rectangle_func=ui.current_maze_algorithm.image.draw_rectangle,
                                                   color=edge.color)
+        ui.current_maze_algorithm.quick_rectangle(ui.current_maze_algorithm.canvas, edge.node1, edge.node2,
+                                                  ui.current_maze_algorithm.cell_width // 2,
+                                                  draw_rectangle_func=solution_image.draw_rectangle,
+                                                  color=edge.color)
 
     if solve:
         if solve_type == "bfs":
-            solver = BreadthFirstSolver(ui, file_path)
+            solver = BreadthFirstSolver(ui, file_path, solution_image)
             solver.solve_with_visualization()
         elif solve_type == "dfs":
-            solver = DepthFirstSolver(ui, file_path)
+            solver = DepthFirstSolver(ui, file_path, solution_image)
             solver.solve_with_visualization()
 
     ui.maze_generation_complete()
-
 
 class MazeImage:
     def __init__(self, width, height):
@@ -177,11 +189,45 @@ class MazeImage:
         """
         Draws a rectangle on the image.
 
-        :param top_left: Tuple (x, y) for the top-left corner of the rectangle
-        :param bottom_right: Tuple (x, y) for the bottom-right corner of the rectangle
-        :param color: Color of the rectangle (e.g., "red", "#FF5733", (255, 87, 51))
+        :param x1, y1: Coordinates for the top-left corner
+        :param x2, y2: Coordinates for the bottom-right corner
+        :param fill: Fill color of the rectangle
+        :param outline: Outline color of the rectangle
         """
-        self.draw.rectangle([(min(x1, x2), min(y1, y2)), (max(x1, x2), max(y1, y2))], fill=fill, outline=fill)
+        self.draw.rectangle([(min(x1, x2), min(y1, y2)), (max(x1, x2), max(y1, y2))], fill=fill)
+
+    def draw_ellipse(self, x1, y1, x2, y2, fill="white", outline="", width=1):
+        """
+        Draws an ellipse on the image.
+
+        :param x1, y1: Coordinates for the top-left corner of the bounding box
+        :param x2, y2: Coordinates for the bottom-right corner of the bounding box
+        :param fill: Fill color of the ellipse
+        :param outline: Outline color of the ellipse
+        :param width: Thickness of the ellipse outline
+        """
+        if width > 1:
+            for offset in range(width):
+                self.draw.ellipse([
+                    (x1 - offset, y1 - offset),
+                    (x2 + offset, y2 + offset)
+                ])
+        self.draw.ellipse([(x1, y1), (x2, y2)], fill=fill)
+
+    def draw_line(self, x1, y1, x2, y2, fill="white", width=1):
+        """
+        Draws a line on the image.
+
+        :param x1, y1: Starting coordinates of the line
+        :param x2, y2: Ending coordinates of the line
+        :param fill: Color of the line
+        :param width: Thickness of the line
+        """
+        if width > 1:
+            for offset in range(-width//2, width//2 + 1):
+                self.draw.line([(x1 + offset, y1), (x2 + offset, y2)], fill=fill)
+        else:
+            self.draw.line([(x1, y1), (x2, y2)], fill=fill, width=width)
 
     def save_image(self, file_name):
         """
