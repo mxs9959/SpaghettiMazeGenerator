@@ -161,7 +161,7 @@ class DepthFirstSolver:
             self.canvas.create_line(
                 x1, y1, x2, y2,
                 fill=color,
-                width=5,
+                width=self.cell_width//18,
                 tags="solution"
             )
             radius = self.cell_width // 12
@@ -371,7 +371,7 @@ class BreadthFirstSolver:
             self.canvas.create_line(
                 x1, y1, x2, y2,
                 fill=color,
-                width=5,
+                width=self.cell_width//18,
                 tags="solution"
             )
             radius = self.cell_width // 12
