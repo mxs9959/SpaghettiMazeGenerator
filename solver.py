@@ -19,13 +19,7 @@ class DepthFirstSolver:
         # Read the maze graph from CSV
         self._parse_csv(csv_file)
 
-    def _parse_csv(self, csv_file):
-        """
-        Parse the CSV file to create nodes and graph structure
-
-        Args:
-            csv_file (str): Path to the CSV file
-        """
+    def _parse_csv(self, csv_file): #Chat GPT wrote but i made many adjustments
         # Reset data structures
         self.nodes = []
         self.graph = defaultdict(list)
@@ -132,7 +126,7 @@ class DepthFirstSolver:
 
         print(f"Solving from {self.start_node} to {self.end_node}")
         print(f"Start node neighbors: {self.graph[self.start_node]}")
-        # BFS queue and visited set
+        # DFS queue and visited set
         stack = deque()
         stack.append((self.start_node, [self.start_node]))
 
@@ -229,7 +223,7 @@ class BreadthFirstSolver:
         # Read the maze graph from CSV
         self._parse_csv(csv_file)
 
-    def _parse_csv(self, csv_file):
+    def _parse_csv(self, csv_file): #Chat GPT wrote but i made many adjustments
         """
         Parse the CSV file to create nodes and graph structure
 
