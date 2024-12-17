@@ -1,4 +1,6 @@
-import tkinter as tk
+#Claude generated the base of this file, but Owen and Max periodically edited and added code within it.
+#Additional notes can be found below.
+
 from collections import deque, defaultdict
 import tkinter.messagebox as messagebox
 class DepthFirstSolver:
@@ -19,7 +21,7 @@ class DepthFirstSolver:
         # Read the maze graph from CSV
         self._parse_csv(csv_file)
 
-    def _parse_csv(self, csv_file): #Chat GPT wrote but i made many adjustments
+    def _parse_csv(self, csv_file): #ChatGPT wrote this method, but Owen made many adjustments
         # Reset data structures
         self.nodes = []
         self.graph = defaultdict(list)
@@ -223,7 +225,7 @@ class BreadthFirstSolver:
         # Read the maze graph from CSV
         self._parse_csv(csv_file)
 
-    def _parse_csv(self, csv_file): #Chat GPT wrote but i made many adjustments
+    def _parse_csv(self, csv_file): #ChatGPT wrote this method, but Owen made many adjustments for correctness.
         """
         Parse the CSV file to create nodes and graph structure
 

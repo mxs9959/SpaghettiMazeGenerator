@@ -1,3 +1,7 @@
+#Claude originally generated this file, and ChatGPT later contributed the is_sub_edge method.
+#It's a rather simple pair of classes.
+#Max carefully reviewed the is_sub_edge method to troubleshoot path overlapping.
+
 class Node:
     def __init__(self, x, y, is_start=False, is_end=False):
         self.x, self.y = x, y

@@ -1,3 +1,7 @@
+#Claude generated this file originally.
+#Max and Owen added the solving and loading buttons and sliders as we added that functionality. We just copied the code for the preexising sliders.
+#Additional notes can be found next to the method headers.
+
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.ttk as ttk
@@ -19,6 +23,7 @@ class MazeGeneratorUI:
         self.maze_generating = False
         self.export_dropdown['values'] = ["CSV", "PNG"]
 
+    #Owen and Max added a few sliders and buttons over time by modifying this method:
     def _create_config_frame(self):
         self.config_frame = tk.Frame(self.master)
         self.config_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -108,6 +113,8 @@ class MazeGeneratorUI:
             padx=10,
             pady=5
         )
+
+    #Owen added this method with help from ChatGPT:
     def solve_selected(self, event):
         solve_type = self.solve_menu.get()
         if solve_type == "BFS":
@@ -162,6 +169,7 @@ class MazeGeneratorUI:
         except Exception as e:
             tk.messagebox.showerror("Export Error", str(e))
 
+    #Max edited this method when adding CSV loading functionality (the "load" parameter)
     def generate_maze(self, load=False):
         # Clear any existing banners
         try:
@@ -297,32 +305,3 @@ class MazeGeneratorUI:
 
         # Pan the canvas
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-
-    def export_maze(self):
-        if not self.current_maze_algorithm:
-            tk.messagebox.showerror("Error", "Generate a maze first!")
-            return
-
-        try:
-            # Export maze and get filepath
-            filepath = export_maze_to_csv(self.current_maze_algorithm)
-
-            # Show export success banner
-            self._show_banner(f"Exported maze to {filepath}", bg_color='green')
-        except Exception as e:
-            tk.messagebox.showerror("Export Error", str(e))
-
-    # In case there are any leftover PDF export references, replace with PNG
-    def print_maze(self):
-        if not self.current_maze_algorithm:
-            tk.messagebox.showerror("Error", "Generate a maze first!")
-            return
-
-        try:
-            # Export maze to PNG and get filepath
-            filepath = export_maze_to_png(self.canvas)
-
-            # Show export success banner
-            self._show_banner(f"Maze PNG exported to {filepath}", bg_color='green')
-        except Exception as e:
-            tk.messagebox.showerror("Export Error", str(e))
